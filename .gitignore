@@ -6,6 +6,7 @@ pnpm-lock.yaml
 # Next
 .next
 out
+public/receipts
 
 # Build
 dist

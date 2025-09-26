@@ -12,6 +12,14 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 
 > **Binary assets policy:** The project intentionally ships without binary image assets (including the default Next.js favicon) so that pull requests remain compatible with the “no binary files” guardrail in our workflow. When you scaffold new features, replace media with text-based placeholders (SVG-as-text, data URIs, etc.) or host assets externally.
 
+## Baseline Dependencies
+The project already includes the core libraries required for Sprint 0. Key packages to verify after running `pnpm install`:
+- `zod`, `react-hook-form`, and `@hookform/resolvers` for form validation.
+- `@tanstack/react-query` and `@tanstack/react-query-devtools` for client data fetching.
+- `prisma` and `@prisma/client` for database access.
+- `stripe` and `@stripe/stripe-js` for payments.
+- `puppeteer` for PDF generation.
+
 ## Getting Started
 ```bash
 pnpm install
@@ -31,18 +39,18 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 1. **Generate SQL migration (manual review first):**
    ```bash
    # Requires a running Postgres database when using migrate dev
-   DIRECT_URL=... DATABASE_URL=... pnpm run migrate:create
+   DIRECT_URL=... DATABASE_URL=... pnpm run migrate:create -- --name init
    ```
-   In this workspace we generated `prisma/migrations/20250101000000_init/migration.sql` via `prisma migrate diff` for manual application. Point the command at your Supabase instance to regenerate as needed.
+   The command writes a new folder under `prisma/migrations/` (e.g. `20250926194629_init/migration.sql`) without applying it so you can inspect the SQL before rollout.
 2. **Apply migrations locally or against Supabase:**
    ```bash
    DIRECT_URL=... DATABASE_URL=... pnpm run migrate:apply
    ```
 3. **Seed demo data:**
    ```bash
-   pnpm prisma db seed
+   pnpm exec prisma db seed
    ```
-   The seed script inserts an org, catalog items, assets, a proposal with slides, and initial selections for the Summit Ventures launch example.
+  The seed script inserts an org, catalog items (with portfolio tags), tagged assets, analytics events, and a proposal with the slide flow `INTRO → CHOICE_CORE → ADDONS → PORTFOLIO → REVIEW → ACCEPT` so you can exercise the interactive deck end-to-end.
 
 > **Note:** Prisma warns that the `package.json#prisma` config is deprecated. For Supabase deployment, you can move the `seed` command into a `prisma.config.ts` or Vercel build step when ready.
 
@@ -54,7 +62,12 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 ## Stripe Integration
 - Configure test keys in `.env.local` and ensure `NEXT_PUBLIC_APP_URL` reflects your dev domain.
 - Create a webhook endpoint pointing to `/api/stripe/webhook` (future enhancement) and store the signing secret in `STRIPE_WEBHOOK_SECRET`.
-- The Checkout handler expects `lineItems` formatted per Stripe's API; the proposal runtime assembles them from current selections.
+- After acceptance the `/api/stripe/checkout` handler launches a deposit-only Checkout Session (line item name `DQuote Deposit — <proposal title>`) using the stored quote totals, so the client only needs to provide the `shareId`.
+
+## PDF Receipts
+- `/proposals/[shareId]/receipt` renders a printable recap (totals, selections, acceptance metadata) for the active quote.
+- The acceptance handler uses Puppeteer to load that page and write the PDF under `public/receipts/` (configurable via `PUPPETEER_EXECUTABLE_PATH` if you bundle Chromium separately).
+- The resulting `pdfUrl` is stored on the quote and surfaced to the proposal runtime so clients can download the receipt immediately after acceptance.
 
 ## shadcn/ui with Custom Registry
 Components are installed from the local registry at `registry/`. Two convenient options:
@@ -92,6 +105,7 @@ Need to pull these components into another project with the familiar registry sy
 - `pnpm dev` — start Next.js in development mode.
 - `pnpm build` / `pnpm start` — production build & run.
 - `pnpm lint` — lint with Next.js config.
+- `pnpm test:pricing` — execute the pricing rules engine unit tests via `node:test`.
 - `pnpm run migrate:create` — generate migration SQL (requires Postgres).
 - `pnpm run migrate:apply` — apply migrations to the configured database.
 - `pnpm prisma db seed` — run the demo seed script via `tsx`.
@@ -99,10 +113,12 @@ Need to pull these components into another project with the familiar registry sy
 ## Sample Flow
 1. Seed the database (`pnpm prisma db seed`).
 2. Open `http://localhost:3000/proposals/dq-demo-aurora`.
-3. Step through slides, toggle add-ons, and watch totals update.
-4. Click **Accept proposal** (status change + analytics event).
-5. Hit **Pay deposit via Stripe** to launch Checkout (requires valid keys).
-6. After acceptance, use the **Schedule kickoff demo** button to drive the Calendly hand-off.
+3. Step through slides, toggle add-ons, and watch totals update alongside the portfolio panel as it refreshes with 2–4 matched proofs.
+4. On the **Review** step, capture the acceptor name and email to prep the signature record.
+5. Move to **Accept** and click **Accept proposal** to store the signature metadata and compute the 20 % deposit.
+6. Hit **Pay deposit via Stripe** to launch Checkout (requires valid test keys); returning with `session_id` marks the quote as paid and updates the runtime badge.
+7. Download the PDF receipt from the success panel and share it with the client if needed.
+8. Use the **Schedule kickoff demo** button to drive the Calendly hand-off.
 
 ## Project Structure Highlights
 ```
@@ -115,13 +131,20 @@ docs/user-stories        # User stories for Sprint 1
 registry/                # Custom shadcn registry items
 ```
 
+## API Endpoints
+- `POST /api/pricing` — calculate subtotal, tax, and total for a proposal based on the provided selections.
+  - Responds with `400` when selections violate require/mutex rules and includes a `violations` array for context.
+- `POST /api/accept` — validate the acceptor details, persist signature metadata (UUID, timestamp, IP/UA), generate the receipt PDF, and respond with the computed 20 % deposit amount plus the `pdfUrl`.
+- `POST /api/stripe/checkout` — create a Stripe Checkout Session for the stored deposit, persist the session/payment IDs, and return the hosted payment URL.
+
 ## Testing & Quality
 - `pnpm lint`
+- `pnpm test:pricing`
 - Run `pnpm dev` and interact with `/proposals/dq-demo-aurora` to validate live pricing & flows.
 - Stripe Checkout requires valid test keys; use Stripe CLI or dashboard to inspect sessions.
 
 ## Next Steps
 - Plug in Supabase auth & multi-org permissions.
 - Implement Stripe webhook handler to mark invoices paid.
-- Extend pricing engine to honor advanced `PricingRule` types (bundles, mutex, require).
-- Export proposals as PDF via headless Chromium for offline review.
+- Expand pricing rules to support stacked promotions and time-bound incentives.
+- Email the generated PDF receipt to the acceptor as part of a confirmation workflow.

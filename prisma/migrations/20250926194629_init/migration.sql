@@ -1,8 +1,11 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
+-- CreateEnum
+CREATE TYPE "public"."SlideType" AS ENUM ('INTRO', 'CHOICE_CORE', 'ADDONS', 'PORTFOLIO', 'REVIEW', 'ACCEPT');
 
 -- CreateEnum
-CREATE TYPE "public"."SlideType" AS ENUM ('CHOICE', 'PORTFOLIO', 'REVIEW', 'ACCEPT');
+CREATE TYPE "public"."OptionKind" AS ENUM ('ITEM', 'BUNDLE');
+
+-- CreateEnum
+CREATE TYPE "public"."EventType" AS ENUM ('VIEW', 'SELECT', 'DESELECT', 'ACCEPT', 'PAY', 'PORTFOLIO_OPEN');
 
 -- CreateEnum
 CREATE TYPE "public"."ProposalStatus" AS ENUM ('DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'DECLINED', 'EXPIRED');
@@ -96,7 +99,7 @@ CREATE TABLE "public"."Option" (
     "id" TEXT NOT NULL,
     "slideId" TEXT NOT NULL,
     "catalogItemId" TEXT,
-    "kind" TEXT NOT NULL,
+    "kind" "public"."OptionKind" NOT NULL,
     "description" TEXT,
     "priceOverride" DECIMAL(12,2),
     "currency" TEXT,
@@ -160,7 +163,14 @@ CREATE TABLE "public"."Quote" (
     "deposit" DECIMAL(12,2),
     "pdfUrl" TEXT,
     "signatureId" TEXT,
-    "stripeId" TEXT,
+    "acceptedAt" TIMESTAMP(3),
+    "acceptedByName" TEXT,
+    "acceptedByEmail" TEXT,
+    "acceptedIp" TEXT,
+    "acceptedUserAgent" TEXT,
+    "stripeCheckoutSessionId" TEXT,
+    "stripePaymentIntentId" TEXT,
+    "depositPaidAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Quote_pkey" PRIMARY KEY ("id")
@@ -174,6 +184,7 @@ CREATE TABLE "public"."Asset" (
     "title" TEXT,
     "type" TEXT NOT NULL,
     "url" TEXT NOT NULL,
+    "tags" TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Asset_pkey" PRIMARY KEY ("id")
@@ -183,7 +194,7 @@ CREATE TABLE "public"."Asset" (
 CREATE TABLE "public"."Event" (
     "id" TEXT NOT NULL,
     "proposalId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
+    "type" "public"."EventType" NOT NULL,
     "data" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -201,6 +212,9 @@ CREATE UNIQUE INDEX "CatalogItem_code_key" ON "public"."CatalogItem"("code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Proposal_shareId_key" ON "public"."Proposal"("shareId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Selection_proposalId_optionId_key" ON "public"."Selection"("proposalId", "optionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Quote_proposalId_key" ON "public"."Quote"("proposalId");
@@ -255,4 +269,3 @@ ALTER TABLE "public"."Asset" ADD CONSTRAINT "Asset_catalogItemId_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "public"."Event" ADD CONSTRAINT "Event_proposalId_fkey" FOREIGN KEY ("proposalId") REFERENCES "public"."Proposal"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
