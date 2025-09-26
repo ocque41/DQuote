@@ -13,7 +13,7 @@ import { logEventAction, updateSelectionsAction } from "@/app/(app)/proposals/[s
 
 export type RuntimeSlide = {
   id: string;
-  type: "CHOICE" | "PORTFOLIO" | "REVIEW" | "ACCEPT";
+  type: "INTRO" | "CHOICE_CORE" | "ADDONS" | "PORTFOLIO" | "REVIEW" | "ACCEPT";
   title?: string | null;
   subtitle?: string | null;
   position: number;
@@ -23,7 +23,7 @@ export type RuntimeSlide = {
 
 export type RuntimeOption = {
   id: string;
-  kind: string;
+  kind: "ITEM" | "BUNDLE";
   description?: string | null;
   priceOverride?: number | null;
   isDefault: boolean;
@@ -131,7 +131,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    startLogTransition(() => logEventAction({ shareId, type: "view", data: { slide: activeIndex + 1 } }));
+    startLogTransition(() => logEventAction({ shareId, type: "VIEW", data: { slide: activeIndex + 1 } }));
   }, [activeIndex, shareId, startLogTransition]);
 
   useEffect(() => {
@@ -161,6 +161,15 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   }, [assets, selectionTags]);
 
   const activeSlide = slides[activeIndex];
+  const introMeta =
+    activeSlide?.type === "INTRO"
+      ? (activeSlide.meta as { headline?: unknown; agenda?: unknown } | null)
+      : null;
+  const introHeadline = typeof introMeta?.headline === "string" ? introMeta.headline : undefined;
+  const introAgenda = Array.isArray(introMeta?.agenda)
+    ? (introMeta.agenda as unknown[]).filter((item): item is string => typeof item === "string")
+    : [];
+  const isChoiceSlide = activeSlide?.type === "CHOICE_CORE" || activeSlide?.type === "ADDONS";
 
   const setChoiceSelection = (slide: RuntimeSlide, option: RuntimeOption) => {
     setSelections((prev) => {
@@ -201,7 +210,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
       if (!res.ok) {
         throw new Error("Failed to accept proposal");
       }
-      await logEventAction({ shareId, type: "accept" });
+      await logEventAction({ shareId, type: "ACCEPT" });
       return (await res.json()) as { ok: boolean };
     }
   });
@@ -237,7 +246,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
       if (json.url) {
         window.location.href = json.url;
       }
-      await logEventAction({ shareId, type: "pay" });
+      await logEventAction({ shareId, type: "PAY" });
       return json;
     }
   });
@@ -264,7 +273,24 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
         </div>
 
-        {activeSlide.type === "CHOICE" ? (
+        {activeSlide.type === "INTRO" ? (
+          <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+            {introHeadline ? <p className="text-lg font-semibold">{introHeadline}</p> : null}
+            <p className="text-sm text-muted-foreground">
+              Crafted for {clientName}
+              {clientCompany ? ` · ${clientCompany}` : ""} by {orgName}.
+            </p>
+            {introAgenda.length ? (
+              <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                {introAgenda.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+
+        {isChoiceSlide ? (
           <div className="grid gap-4 md:grid-cols-2">
             {activeSlide.options.map((option) => {
               const optionPrice = option.priceOverride ?? option.catalogItem?.unitPrice ?? 0;
