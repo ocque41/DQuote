@@ -1,15 +1,12 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "registries": {
-    "@cumulus": "http://localhost:3000/r/{name}.json"
-  },
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils"
   },
-  "style": "new-york",
-  "rsc": true,
-  "tsx": true,
   "tailwind": {
     "config": "tailwind.config.ts",
     "css": "src/app/globals.css",
