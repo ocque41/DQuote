@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { EventType } from "@prisma/client";
+
 import { prisma } from "@/server/prisma";
 
 const SelectionSchema = z.object({
@@ -17,7 +19,7 @@ const UpdateSelectionsSchema = z.object({
 
 const EventSchema = z.object({
   shareId: z.string(),
-  type: z.string(),
+  type: z.nativeEnum(EventType),
   data: z.record(z.any()).optional()
 });
 

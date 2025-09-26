@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import { SignOutButton } from "@/components/auth/sign-out-button";
+import { getViewerContext } from "@/server/auth";
 
 const navLinks = [
   { href: "/app", label: "Overview" },
@@ -8,7 +10,15 @@ const navLinks = [
   { href: "/admin/analytics", label: "Analytics" }
 ];
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthenticatedAppLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await getViewerContext();
+
+  if (!viewer) {
+    redirect("/app/sign-in");
+  }
+
+  const displayName = viewer.orgUser.name ?? viewer.supabaseUser.email ?? "Account";
+
   return (
     <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
@@ -23,11 +33,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="https://cal.com" target="_blank" rel="noreferrer">
-              Book demo
-            </Link>
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-semibold leading-tight">{displayName}</p>
+              <p className="text-xs text-muted-foreground">{viewer.org.name}</p>
+            </div>
+            <SignOutButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
