@@ -1,4 +1,13 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+
+import {
+  PrismaClient,
+  Prisma,
+  SlideType,
+  OptionKind,
+  EventType,
+  ProposalStatus
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -78,28 +87,32 @@ async function main() {
         catalogItemId: djBasic.id,
         title: "Skyline Ballroom Mix",
         type: "image",
-        url: "https://images.unsplash.com/photo-1525282410961-45b0a7a5e225"
+        url: "https://images.unsplash.com/photo-1525282410961-45b0a7a5e225",
+        tags: ["dj", "core", "music"]
       },
       {
         orgId: org.id,
         catalogItemId: djPro.id,
         title: "Sunset Terrace First Dance",
         type: "video",
-        url: "https://videos.pexels.com/video-files/856098/856098-hd_1280_720_30fps.mp4"
+        url: "https://videos.pexels.com/video-files/856098/856098-hd_1280_720_30fps.mp4",
+        tags: ["dj", "premium", "music"]
       },
       {
         orgId: org.id,
         catalogItemId: lightingBasic.id,
         title: "Warm Amber Package",
         type: "image",
-        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4"
+        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4",
+        tags: ["lighting", "ambience"]
       },
       {
         orgId: org.id,
         catalogItemId: lightingPro.id,
         title: "Cold Spark Reveal",
         type: "image",
-        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4"
+        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4",
+        tags: ["lighting", "premium"]
       }
     ]
   });
@@ -121,7 +134,7 @@ async function main() {
       title: "Summit Ventures Launch Night",
       shareId: "dq-demo-aurora",
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
-      status: "SENT",
+      status: ProposalStatus.SENT,
       theme: {
         primary: "#1E40AF",
         secondary: "#F97316",
@@ -130,32 +143,45 @@ async function main() {
     }
   });
 
-  const slides = await prisma.$transaction([
+  const [, choiceSlide, addOnSlide] = await prisma.$transaction([
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "CHOICE",
+        type: SlideType.INTRO,
+        title: "Welcome to your launch night experience",
+        subtitle: "A tailored outline of entertainment, ambiance, and acceptance steps.",
+        position: 1,
+        meta: {
+          headline: "Summit Ventures product reveal",
+          agenda: ["Cocktail hour soundscape", "Live launch moment", "After-party DJ"]
+        }
+      }
+    }),
+    prisma.slide.create({
+      data: {
+        proposalId: proposal.id,
+        type: SlideType.CHOICE_CORE,
         title: "Choose your entertainment vibe",
         subtitle: "Each option includes setup, planning calls, and live mixing.",
-        position: 1,
+        position: 2,
         options: {
           create: [
             {
               catalogItemId: djBasic.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "Reception DJ for up to 200 guests",
               isDefault: true,
               defaultQty: 1
             },
             {
               catalogItemId: djPro.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "Full-day DJ + MC with intelligent lighting",
               isDefault: false,
               defaultQty: 1
             },
             {
-              kind: "bundle",
+              kind: OptionKind.BUNDLE,
               description: "Hybrid: DJ Essentials + Atmosphere Lighting",
               priceOverride: new Prisma.Decimal(1650),
               isDefault: false,
@@ -168,22 +194,22 @@ async function main() {
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "CHOICE",
+        type: SlideType.ADDONS,
         title: "Enhance the experience",
         subtitle: "Add-ons can be toggled at any time.",
-        position: 2,
+        position: 3,
         options: {
           create: [
             {
               catalogItemId: lightingBasic.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "Ambient uplighting and dance floor wash",
               isAddOn: true,
               defaultQty: 1
             },
             {
               catalogItemId: lightingPro.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "DMX lighting, haze, and cold spark intro",
               isAddOn: true,
               defaultQty: 1
@@ -195,10 +221,10 @@ async function main() {
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "PORTFOLIO",
+        type: SlideType.PORTFOLIO,
         title: "See it in action",
         subtitle: "Portfolio curated based on your selections",
-        position: 3,
+        position: 4,
         meta: {
           layout: "grid",
           columns: 3
@@ -208,23 +234,21 @@ async function main() {
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "REVIEW",
+        type: SlideType.REVIEW,
         title: "Your investment overview",
-        position: 4
+        position: 5
       }
     }),
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "ACCEPT",
+        type: SlideType.ACCEPT,
         title: "Lock it in",
         subtitle: "Sign & pay the deposit to confirm",
-        position: 5
+        position: 6
       }
     })
   ]);
-
-  const [choiceSlide, addOnSlide] = slides;
 
   const defaultSelection = await prisma.selection.create({
     data: {
@@ -263,17 +287,211 @@ async function main() {
     }
   });
 
+  const orderedSlides = await prisma.slide.findMany({
+    where: { proposalId: proposal.id },
+    orderBy: { position: "asc" },
+    include: { options: true }
+  });
+  const introSlide = orderedSlides.find((slide) => slide.type === SlideType.INTRO);
+  const choiceCoreSlide = orderedSlides.find((slide) => slide.type === SlideType.CHOICE_CORE);
+  const addonsSlide = orderedSlides.find((slide) => slide.type === SlideType.ADDONS);
+  const portfolioSlide = orderedSlides.find((slide) => slide.type === SlideType.PORTFOLIO);
+  const reviewSlide = orderedSlides.find((slide) => slide.type === SlideType.REVIEW);
+  const acceptSlide = orderedSlides.find((slide) => slide.type === SlideType.ACCEPT);
+
+  const choiceOptions = choiceCoreSlide?.options ?? [];
+  const addonOptions = addonsSlide?.options ?? [];
+
+  const timelineStart = new Date(Date.now() - 1000 * 60 * 90);
+  const atMinute = (minutes: number) => new Date(timelineStart.getTime() + minutes * 60 * 1000);
+  const viewerPrimary = "viewer-seed-primary";
+  const viewerSecondary = "viewer-seed-secondary";
+  const acceptedSignature = randomUUID();
+
   await prisma.event.createMany({
     data: [
       {
         proposalId: proposal.id,
-        type: "view",
-        data: { slide: 1 }
+        type: EventType.VIEW,
+        createdAt: atMinute(0),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: introSlide?.id,
+          slideType: introSlide?.type,
+          slideTitle: introSlide?.title,
+          slideIndex: 0
+        }
       },
       {
         proposalId: proposal.id,
-        type: "select",
-        data: { optionCode: "DJ-BASIC" }
+        type: EventType.VIEW,
+        createdAt: atMinute(2),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: choiceCoreSlide?.id,
+          slideType: choiceCoreSlide?.type,
+          slideTitle: choiceCoreSlide?.title,
+          slideIndex: 1
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.SELECT,
+        createdAt: atMinute(3),
+        data: {
+          viewerId: viewerPrimary,
+          optionId: choiceOptions[0]?.id,
+          optionLabel: choiceOptions[0]?.description,
+          quantity: 1,
+          slideId: choiceCoreSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(6),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: addonsSlide?.id,
+          slideType: addonsSlide?.type,
+          slideTitle: addonsSlide?.title,
+          slideIndex: 2
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.SELECT,
+        createdAt: atMinute(7),
+        data: {
+          viewerId: viewerPrimary,
+          optionId: addonOptions[0]?.id,
+          optionLabel: addonOptions[0]?.description,
+          quantity: 1,
+          slideId: addonsSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(9),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: portfolioSlide?.id,
+          slideType: portfolioSlide?.type,
+          slideTitle: portfolioSlide?.title,
+          slideIndex: 3
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.PORTFOLIO_OPEN,
+        createdAt: atMinute(9),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: portfolioSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(11),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: reviewSlide?.id,
+          slideType: reviewSlide?.type,
+          slideTitle: reviewSlide?.title,
+          slideIndex: 4
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(14),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: acceptSlide?.id,
+          slideType: acceptSlide?.type,
+          slideTitle: acceptSlide?.title,
+          slideIndex: 5
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.ACCEPT,
+        createdAt: atMinute(16),
+        data: {
+          viewerId: viewerPrimary,
+          signatureId: acceptedSignature
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.PAY,
+        createdAt: atMinute(25),
+        data: {
+          viewerId: viewerPrimary,
+          amount: Number(total) * 0.3
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(5),
+        data: {
+          viewerId: viewerSecondary,
+          slideId: introSlide?.id,
+          slideType: introSlide?.type,
+          slideTitle: introSlide?.title,
+          slideIndex: 0
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(8),
+        data: {
+          viewerId: viewerSecondary,
+          slideId: choiceCoreSlide?.id,
+          slideType: choiceCoreSlide?.type,
+          slideTitle: choiceCoreSlide?.title,
+          slideIndex: 1
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.SELECT,
+        createdAt: atMinute(9),
+        data: {
+          viewerId: viewerSecondary,
+          optionId: choiceOptions[1]?.id,
+          optionLabel: choiceOptions[1]?.description,
+          quantity: 1,
+          slideId: choiceCoreSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.DESELECT,
+        createdAt: atMinute(10),
+        data: {
+          viewerId: viewerSecondary,
+          optionId: choiceOptions[1]?.id,
+          optionLabel: choiceOptions[1]?.description,
+          quantity: 0,
+          slideId: choiceCoreSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(12),
+        data: {
+          viewerId: viewerSecondary,
+          slideId: reviewSlide?.id,
+          slideType: reviewSlide?.type,
+          slideTitle: reviewSlide?.title,
+          slideIndex: 4
+        }
       }
     ]
   });
@@ -301,24 +519,34 @@ async function main() {
       slides: {
         create: [
           {
-            type: "CHOICE",
-            title: "Entertainment tier",
+            type: SlideType.INTRO,
+            title: "Set the stage",
             position: 1
           },
           {
-            type: "CHOICE",
-            title: "Enhancements",
+            type: SlideType.CHOICE_CORE,
+            title: "Entertainment tier",
             position: 2
           },
           {
-            type: "PORTFOLIO",
-            title: "Proof points",
+            type: SlideType.ADDONS,
+            title: "Enhancements",
             position: 3
           },
           {
-            type: "ACCEPT",
-            title: "Next steps",
+            type: SlideType.PORTFOLIO,
+            title: "Proof points",
             position: 4
+          },
+          {
+            type: SlideType.REVIEW,
+            title: "Investment overview",
+            position: 5
+          },
+          {
+            type: SlideType.ACCEPT,
+            title: "Next steps",
+            position: 6
           }
         ]
       }
