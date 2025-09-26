@@ -40,6 +40,7 @@ Authenticate at `/app/sign-in` using a Supabase email/password account. The firs
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Exposed to the browser for Supabase Auth helpers.
 - `NEXT_PUBLIC_APP_URL`: Base URL for success/cancel redirects.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+- `BLOB_READ_WRITE_TOKEN`: Server-side token that enables uploads to Vercel Blob storage.
 - `DEMO_PROPOSAL_SHARE_ID` (optional): Overrides the proposal used by the analytics dashboard (`dq-demo-aurora` by default).
 - `PDF_STORAGE_BUCKET` (optional): Target folder/S3 key prefix for generated receipt PDFs when deploying beyond local disk.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`: SMTP credentials for emailing receipt PDFs after acceptance.
@@ -163,6 +164,21 @@ registry/                # Custom shadcn registry items
 - `POST /api/accept` — validate the acceptor details, persist signature metadata (UUID, timestamp, IP/UA), generate the receipt PDF, and respond with the computed 20 % deposit amount plus the `pdfUrl`.
 - `POST /api/stripe/checkout` — create a Stripe Checkout Session for the stored deposit, persist the session/payment IDs, and return the hosted payment URL.
 - `POST /api/stripe/webhook` — validate Stripe signatures and mark quotes as paid on `checkout.session.completed`, emitting `PAY` events even if the viewer doesn’t return to the proposal.
+- `POST /api/blob/upload` — accept a `multipart/form-data` upload with a `file` field, store it in Vercel Blob under the `dquote/` prefix, and respond with the public URL.
+
+### Verifying Blob uploads locally
+1. Ensure `BLOB_READ_WRITE_TOKEN` is present in `.env.local` (copy it from Vercel > Storage > Blob) and restart `pnpm dev` if needed.
+2. Upload a sample file via curl:
+   ```bash
+   curl -X POST "http://localhost:3000/api/blob/upload" \
+     -H "Accept: application/json" \
+     -F "file=@README.md"
+   ```
+   The response contains `{ "url": "https://..." }`. Open the URL in a browser to confirm it is publicly reachable.
+3. Optionally list stored blobs via the CLI (requires `vercel`):
+   ```bash
+   vercel blob list --prefix dquote/
+   ```
 
 ## Testing & Quality
 - `pnpm lint`

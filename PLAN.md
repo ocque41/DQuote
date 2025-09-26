@@ -175,3 +175,26 @@
 - [x] README enumerates final setup/run commands, environment variables, and notes on Stripe webhooks/Supabase usage.
 - [x] `.env.example` contains placeholders for all required secrets and optional configs referenced in documentation.
 
+# SPRINT 10 PLAN
+
+## Item 1: Vercel Blob upload endpoint
+- Add a Next.js route at `src/app/api/blob/upload/route.ts` using `@vercel/blob`'s `put` helper to accept form uploads and return the public URL.
+
+### Acceptance Criteria
+- [x] Posting `multipart/form-data` with a `file` field stores the blob with a random suffix under the `dquote/` prefix and responds with `{ url }`.
+- [x] Missing file inputs respond with HTTP 400 and a JSON body containing an `error` message.
+
+## Item 2: Storage documentation refresh
+- Update `README.md` with instructions for configuring `BLOB_READ_WRITE_TOKEN`, testing uploads via the API route, and verifying the resulting public URL.
+
+### Acceptance Criteria
+- [x] README lists the new environment variable and API usage steps alongside verification instructions.
+- [x] Setup section references the blob upload route and links the verification command or curl example.
+
+## Item 3: Environment template update
+- Add the `BLOB_READ_WRITE_TOKEN` placeholder to `.env.example` so deployments surface the required credential.
+
+### Acceptance Criteria
+- [x] `.env.example` includes `BLOB_READ_WRITE_TOKEN=` with a short note that it enables Vercel Blob uploads.
+- [x] Existing variables remain unchanged aside from the new token entry.
+
