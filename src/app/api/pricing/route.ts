@@ -99,10 +99,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const netSubtotal = evaluation.subtotal - evaluation.discount;
-
   return NextResponse.json({
-    subtotal: round(netSubtotal),
+    subtotal: round(evaluation.subtotal),
+    discount: round(evaluation.discount),
     tax: round(evaluation.tax),
     total: round(evaluation.total)
   });

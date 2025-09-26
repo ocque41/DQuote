@@ -7,6 +7,7 @@ type Totals = {
   subtotal: number;
   tax: number;
   total: number;
+  discount?: number | null;
 };
 
 type SummaryDelta = {
@@ -43,7 +44,8 @@ export function SummaryTray({
   depositPaid,
   signatureId
 }: SummaryTrayProps) {
-  const displayTotals = totals ?? initialTotals ?? { subtotal: 0, tax: 0, total: 0 };
+  const displayTotals = totals ?? initialTotals ?? { subtotal: 0, tax: 0, total: 0, discount: 0 };
+  const discountAmount = Math.max(0, displayTotals.discount ?? 0);
   const depositAmount = deposit ?? initialTotals?.deposit ?? null;
   const deltaDisplay = delta ?? null;
   const showSkeleton = Boolean(isLoading && !totals && !initialTotals);
@@ -80,6 +82,12 @@ export function SummaryTray({
         ) : (
           <>
             <SummaryRow label="Subtotal" value={formatCurrency(displayTotals.subtotal, currency)} />
+            {discountAmount > 0 ? (
+              <SummaryRow
+                label="Promotion savings"
+                value={`−${formatCurrency(discountAmount, currency)}`}
+              />
+            ) : null}
             <SummaryRow label="Tax" value={formatCurrency(displayTotals.tax, currency)} />
             <SummaryRow label="Total" value={formatCurrency(displayTotals.total, currency)} emphasize />
           </>

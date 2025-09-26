@@ -5,6 +5,7 @@ import { EventType, Prisma, ProposalStatus } from "@prisma/client";
 
 import { prisma } from "@/server/prisma";
 import { generateQuotePdf } from "@/server/pdf/quote";
+import { sendReceiptEmail } from "@/server/email/receipt";
 
 const BodySchema = z.object({
   shareId: z.string(),
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
 
   const proposal = await prisma.proposal.findUnique({
     where: { shareId: parsed.data.shareId },
-    include: { quote: true }
+    include: { quote: true, client: true, org: true }
   });
 
   if (!proposal || !proposal.quote) {
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
   ]);
 
   let pdfUrl: string | null = null;
+  let pdfPath: string | null = null;
   const origin = new URL(req.url).origin;
 
   try {
@@ -76,13 +78,57 @@ export async function POST(req: Request) {
       baseUrl: origin
     });
     pdfUrl = result.pdfUrl;
-    await prisma.quote.update({
-      where: { id: proposal.quote.id },
-      data: { pdfUrl }
-    });
+    pdfPath = result.filePath;
   } catch (error) {
     console.error("Failed to generate proposal PDF", error);
   }
+
+  const recipients = new Set<string>();
+  recipients.add(parsed.data.email.toLowerCase());
+  if (proposal.client?.email) {
+    recipients.add(proposal.client.email.toLowerCase());
+  }
+
+  const recipientList = Array.from(recipients);
+  let receiptEmailSentAt: Date | null = null;
+  let receiptEmailError: string | null = null;
+
+  if (recipientList.length) {
+    try {
+      await sendReceiptEmail({
+        recipients: recipientList,
+        orgName: proposal.org.name,
+        proposalTitle: proposal.title,
+        acceptorName: parsed.data.name,
+        acceptorEmail: parsed.data.email,
+        clientName: proposal.client?.name,
+        total: totalNumber,
+        deposit: computedDeposit,
+        currency: proposal.quote.currency,
+        receiptUrl: pdfUrl,
+        pdfPath,
+        baseUrl: origin
+      });
+      receiptEmailSentAt = new Date();
+    } catch (error) {
+      console.error("Failed to send receipt email", error);
+      receiptEmailError = error instanceof Error ? error.message : "Unknown error";
+    }
+  }
+
+  const quoteUpdateData: Prisma.QuoteUpdateInput = {
+    receiptEmailSentAt,
+    receiptEmailRecipients: { set: recipientList },
+    receiptEmailError
+  };
+  if (pdfUrl) {
+    quoteUpdateData.pdfUrl = pdfUrl;
+  }
+
+  await prisma.quote.update({
+    where: { id: proposal.quote.id },
+    data: quoteUpdateData
+  });
 
   return NextResponse.json({
     deposit: computedDeposit,

@@ -33,6 +33,16 @@ async function main() {
     }
   });
 
+  await prisma.user.create({
+    data: {
+      id: "11111111-1111-1111-1111-111111111111",
+      orgId: org.id,
+      email: "founder@aurora.events",
+      name: "Avery Rivera",
+      role: "admin"
+    }
+  });
+
   const [djBasic, djPro, lightingBasic, lightingPro] = await prisma.$transaction([
     prisma.catalogItem.create({
       data: {
@@ -515,11 +525,14 @@ async function main() {
   await prisma.pricingRule.create({
     data: {
       orgId: org.id,
-      name: "Bundle lighting with DJ",
-      type: "discount_pct",
+      name: "Tiered launch night savings",
+      type: "discount_threshold_pct",
       config: {
-        triggerTags: ["lighting", "dj"],
-        percentage: 5
+        thresholds: [
+          { minimum: 1500, percentage: 8 },
+          { minimum: 2500, percentage: 12 }
+        ],
+        appliesToTags: ["lighting", "dj"]
       }
     }
   });

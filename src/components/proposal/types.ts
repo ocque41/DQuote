@@ -55,6 +55,7 @@ export type ProposalRuntimeProps = {
     subtotal: number;
     tax: number;
     total: number;
+    discount?: number | null;
     deposit?: number | null;
   } | null;
   quoteStatus?: {

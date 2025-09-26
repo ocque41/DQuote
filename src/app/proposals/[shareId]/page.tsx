@@ -303,6 +303,7 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
           proposal.quote
             ? {
                 subtotal: Number(proposal.quote.subtotal),
+                discount: proposal.quote.discount ? Number(proposal.quote.discount) : 0,
                 tax: Number(proposal.quote.tax),
                 total: Number(proposal.quote.total),
                 deposit: proposal.quote.deposit ? Number(proposal.quote.deposit) : null

@@ -154,3 +154,42 @@ test("percentage discount and tax apply deterministically", () => {
   assert.ok(Math.abs(result.total - expectedTotal) < 0.0001);
   assert.strictEqual(result.violations.length, 0);
 });
+
+test("threshold discount selects highest qualifying tier", () => {
+  const rule = {
+    id: "rule-threshold",
+    type: "discount_threshold_pct",
+    name: "Spend more, save more",
+    config: {
+      thresholds: [
+        { minimum: 1500, percentage: 8 },
+        { minimum: 2500, percentage: 12 }
+      ],
+      appliesToTags: ["dj", "lighting"]
+    }
+  } as const;
+
+  const baseResult = evaluatePricing({
+    items: baseItems,
+    rules: [rule]
+  });
+
+  assert.strictEqual(baseResult.violations.length, 0);
+  assert.ok(Math.abs(baseResult.discount - 1750 * 0.08) < 0.0001);
+
+  const upgradedItems = baseItems.map((item) =>
+    item.optionId === "lighting-pro" ? { ...item, qty: 1 } : item
+  );
+
+  const upgradedResult = evaluatePricing({
+    items: upgradedItems,
+    rules: [rule]
+  });
+
+  const upgradedSubtotal = upgradedItems
+    .filter((item) => item.qty > 0)
+    .reduce((sum, item) => sum + item.unitPrice * item.qty, 0);
+
+  assert.ok(upgradedSubtotal >= 2500);
+  assert.ok(Math.abs(upgradedResult.discount - upgradedSubtotal * 0.12) < 0.0001);
+});

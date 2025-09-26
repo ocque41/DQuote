@@ -59,6 +59,15 @@ type DiscountPercentRuleConfig = DiscountRuleConfig & {
   percentage: number;
 };
 
+type DiscountThresholdTier = {
+  minimum: number;
+  percentage: number;
+};
+
+type DiscountThresholdRuleConfig = DiscountRuleConfig & {
+  thresholds: DiscountThresholdTier[];
+};
+
 type TaxRuleConfig = {
   percentage: number;
 };
@@ -158,6 +167,27 @@ export function evaluatePricing({ items, rules, fallbackTaxRate }: EvaluatePrici
         discountTotal += eligibleSubtotal * (parsed.percentage / 100);
         break;
       }
+      case "discount_threshold_pct": {
+        const parsed = parseDiscountThresholdConfig(config);
+        if (!parsed) {
+          break;
+        }
+        if (!isTriggerSatisfied(parsed, selectedOptionIds, selectedTags)) {
+          break;
+        }
+        const eligibleSubtotal = calculateEligibleSubtotal(items, parsed);
+        if (eligibleSubtotal <= 0) {
+          break;
+        }
+        const applicableTier = [...parsed.thresholds]
+          .filter((tier) => eligibleSubtotal >= tier.minimum)
+          .sort((a, b) => b.minimum - a.minimum)[0];
+        if (!applicableTier) {
+          break;
+        }
+        discountTotal += eligibleSubtotal * (applicableTier.percentage / 100);
+        break;
+      }
       case "tax_pct": {
         const parsed = parseTaxConfig(config);
         if (!parsed) {
@@ -221,6 +251,37 @@ function parseDiscountPercentConfig(config: Record<string, unknown>): DiscountPe
   }
   return {
     percentage,
+    triggerOptionIds: stringList(config["triggerOptionIds"] ?? config["triggers"] ?? []),
+    triggerTags: stringList(config["triggerTags"] ?? []),
+    appliesToOptionIds: stringList(config["appliesToOptionIds"] ?? config["targets"] ?? []),
+    appliesToTags: stringList(config["appliesToTags"] ?? [])
+  };
+}
+
+function parseDiscountThresholdConfig(config: Record<string, unknown>): DiscountThresholdRuleConfig | null {
+  const thresholdsConfig = Array.isArray(config["thresholds"]) ? config["thresholds"] : [];
+  const thresholds: DiscountThresholdTier[] = [];
+  for (const entry of thresholdsConfig) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+    const entryRecord = entry as Record<string, unknown>;
+    const minimum = parseNumber(entryRecord["minimum"] ?? entryRecord["subtotal"] ?? entryRecord["min"]);
+    const percentage = parseNumber(entryRecord["percentage"] ?? entryRecord["percent"]);
+    if (minimum === null || minimum < 0) {
+      continue;
+    }
+    if (percentage === null || percentage <= 0) {
+      continue;
+    }
+    thresholds.push({ minimum, percentage });
+  }
+  if (!thresholds.length) {
+    return null;
+  }
+  thresholds.sort((a, b) => a.minimum - b.minimum);
+  return {
+    thresholds,
     triggerOptionIds: stringList(config["triggerOptionIds"] ?? config["triggers"] ?? []),
     triggerTags: stringList(config["triggerTags"] ?? []),
     appliesToOptionIds: stringList(config["appliesToOptionIds"] ?? config["targets"] ?? []),

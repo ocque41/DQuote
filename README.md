@@ -5,6 +5,7 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 ## Architecture Overview
 - **Next.js 15 App Router** with server components, route groups for marketing vs. application surfaces, and Route Handlers for APIs.
 - **Prisma** data model targeting Supabase Postgres (manual SQL migration generated via `prisma migrate diff`).
+- **Supabase Auth** with middleware-protected `/app` and `/admin` routes tied to organization membership.
 - **React Query + Server Actions** for optimistic selection updates and analytics logging.
 - **Stripe Checkout** (App Router handler) for deposit payments.
 - **shadcn/ui** components sourced from a custom local registry (`registry/*.json`).
@@ -30,14 +31,18 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
 
+Authenticate at `/app/sign-in` using a Supabase email/password account. The first authenticated user is automatically linked to the seeded Aurora Events org with admin permissions so you can explore the dashboard immediately.
+
 ### Environment Variables
 `.env.example` documents the required configuration:
 - `DATABASE_URL` / `DIRECT_URL`: Supabase Postgres connection strings.
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`: Helpful when wiring Supabase Auth or Row Level Security policies alongside Prisma.
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Exposed to the browser for Supabase Auth helpers.
 - `NEXT_PUBLIC_APP_URL`: Base URL for success/cancel redirects.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - `DEMO_PROPOSAL_SHARE_ID` (optional): Overrides the proposal used by the analytics dashboard (`dq-demo-aurora` by default).
 - `PDF_STORAGE_BUCKET` (optional): Target folder/S3 key prefix for generated receipt PDFs when deploying beyond local disk.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`: SMTP credentials for emailing receipt PDFs after acceptance.
 - `ENCRYPTION_KEY`: Reserved for future secure payload handling (32 chars).
 
 ## Database & Prisma Workflow
@@ -63,16 +68,18 @@ An admin analytics view is available at `/admin/analytics`, summarising slide co
 - Create a Supabase project and enable the native Postgres connection string (non-pooled) for `DIRECT_URL` when using Prisma migrate.
 - Provision a service role key if you plan to run serverless functions that manipulate data outside of Prisma.
 - Configure Supabase Row Level Security policies as you move beyond the seeded demo org.
+- Add at least one Supabase Auth user (email/password) — the dashboard auto-links the first authenticated user to Aurora Events with admin permissions for local exploration.
 
 ## Stripe Integration
 - Configure test keys in `.env.local` and ensure `NEXT_PUBLIC_APP_URL` reflects your dev domain.
-- Create a webhook endpoint pointing to `/api/stripe/webhook` (future enhancement) and store the signing secret in `STRIPE_WEBHOOK_SECRET`.
+- Create a webhook endpoint pointing to `/api/stripe/webhook`, store the signing secret in `STRIPE_WEBHOOK_SECRET`, and run `stripe listen --forward-to localhost:3000/api/stripe/webhook` during local testing to mirror deposit confirmations.
 - After acceptance the `/api/stripe/checkout` handler launches a deposit-only Checkout Session (line item name `DQuote Deposit — <proposal title>`) using the stored quote totals, so the client only needs to provide the `shareId`.
 
 ## PDF Receipts
 - `/proposals/[shareId]/receipt` renders a printable recap (totals, selections, acceptance metadata) for the active quote.
 - The acceptance handler uses Puppeteer to load that page and write the PDF under `public/receipts/` (configurable via `PUPPETEER_EXECUTABLE_PATH` if you bundle Chromium separately).
 - The resulting `pdfUrl` is stored on the quote and surfaced to the proposal runtime so clients can download the receipt immediately after acceptance.
+- When SMTP credentials are present the acceptance flow emails the PDF receipt (and hosted link) to the acceptor plus the client contact.
 
 ## Error Handling & Accessibility
 - Proposal themes feed CSS variables into the runtime so the seeded demo renders a branded hero, colored progress indicator, and accented option cards.
@@ -135,13 +142,14 @@ Need to pull these components into another project with the familiar registry sy
 
 ## Analytics & Event Tracking
 - The proposal runtime logs lifecycle events (`VIEW`, `SELECT`, `DESELECT`, `PORTFOLIO_OPEN`) using server actions so admins can reconstruct viewer funnels.
-- The acceptance flow writes `ACCEPT` and `PAY` events from the backend, ensuring Stripe-confirmed payments and signatures are tracked even if the client closes the browser early.
+- The acceptance flow writes `ACCEPT` and `PAY` events from the backend, with the Stripe webhook replaying deposit confirmations so payments are captured even if the viewer closes the browser early.
 - The analytics dashboard aggregates those events into completion percentages per slide, average time spent between slides, and total counts per event type for quick health checks.
 
 ## Project Structure Highlights
 ```
 src/app/(marketing)      # Marketing site
-src/app/(app)            # Authenticated dashboard + proposal runtime
+src/app/app/(authenticated)  # Authenticated dashboard surfaces
+src/app/app/(public)         # Auth entry (sign-in)
 src/app/api              # Route Handlers (pricing, proposals, accept, stripe)
 src/components/proposal  # Client runtime UI
 prisma/                  # Schema, migrations, seed data
@@ -154,6 +162,7 @@ registry/                # Custom shadcn registry items
   - Responds with `400` when selections violate require/mutex rules and includes a `violations` array for context.
 - `POST /api/accept` — validate the acceptor details, persist signature metadata (UUID, timestamp, IP/UA), generate the receipt PDF, and respond with the computed 20 % deposit amount plus the `pdfUrl`.
 - `POST /api/stripe/checkout` — create a Stripe Checkout Session for the stored deposit, persist the session/payment IDs, and return the hosted payment URL.
+- `POST /api/stripe/webhook` — validate Stripe signatures and mark quotes as paid on `checkout.session.completed`, emitting `PAY` events even if the viewer doesn’t return to the proposal.
 
 ## Testing & Quality
 - `pnpm lint`
@@ -162,7 +171,8 @@ registry/                # Custom shadcn registry items
 - Stripe Checkout requires valid test keys; use Stripe CLI or dashboard to inspect sessions.
 
 ## Next Steps
-- Plug in Supabase auth & multi-org permissions.
-- Implement Stripe webhook handler to mark invoices paid.
-- Expand pricing rules to support stacked promotions and time-bound incentives.
-- Email the generated PDF receipt to the acceptor as part of a confirmation workflow.
+- Layer Supabase role management and invitation flows so additional org members can join without manual seeding.
+- Expand the pricing engine with time-bound or stacked promotions to cover seasonal incentives.
+- Capture webhook updates for Stripe refunds/cancellations and surface the state change inside the proposal runtime.
+- Stream PDF receipts to durable object storage (Supabase buckets or S3) and replace local disk writes for production deployments.
+- Visualise analytics with trend lines and cohort filters so admins can compare proposal performance over time.

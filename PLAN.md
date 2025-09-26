@@ -1,3 +1,33 @@
+# SPRINT 9 PLAN
+
+## Item 1: Supabase authentication & multi-org permissions
+- Integrate Supabase Auth helpers for the App Router, add a credential-based sign-in flow, and gate internal routes by the viewer's organization membership.
+
+### Acceptance Criteria
+- [x] Authenticated admins can sign in at `/app/sign-in`, hit protected `/app/**` and `/admin/**` routes, and only see proposals tied to their `orgId`.
+- [x] Visitors without a session are redirected to the sign-in page and share links remain publicly accessible without auth barriers.
+
+## Item 2: Pricing promotions & tiered discounts
+- Extend the pricing rules engine with order-value promotions (e.g., threshold percentage discounts) and ensure totals propagate through the pricing API and runtime.
+
+### Acceptance Criteria
+- [x] New `discount_threshold_pct` rule type reduces totals when selections cross configured subtotal thresholds and is covered by unit tests.
+- [x] Pricing responses and UI reflect the promotion details without breaking existing discount/tax logic.
+
+## Item 3: Acceptance automation & communications
+- Trigger transactional email delivery with the generated PDF receipt and ensure acceptance routes capture delivery outcomes for auditing.
+
+### Acceptance Criteria
+- [x] Accepting a proposal emails the PDF receipt to the acceptor and client contacts using configured SMTP credentials, logging failures without blocking storage updates.
+- [x] Quote records persist email delivery metadata for admins to review in analytics or future dashboards.
+
+## Item 4: Stripe webhook deposit reconciliation
+- Add a Stripe webhook route handler that confirms deposit payments asynchronously and updates quotes, events, and analytics data accordingly.
+
+### Acceptance Criteria
+- [x] The webhook validates signatures, marks quotes as paid, and emits PAY events when Stripe sends `checkout.session.completed` notifications.
+- [x] README and `.env.example` list the webhook secret and testing instructions so deposits stay consistent even if the browser closes early.
+
 # SPRINT 2 PLAN
 
 ## Item 1: Public proposal runtime page

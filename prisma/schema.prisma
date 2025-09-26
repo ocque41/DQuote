@@ -200,6 +200,9 @@ model Quote {
   acceptedByEmail   String?
   acceptedIp        String?
   acceptedUserAgent String?
+  receiptEmailSentAt   DateTime?
+  receiptEmailRecipients String[] @default([])
+  receiptEmailError      String?
   stripeCheckoutSessionId String?
   stripePaymentIntentId   String?
   depositPaidAt           DateTime?

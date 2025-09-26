@@ -1,6 +1,9 @@
+import { redirect } from "next/navigation";
+
 import { EventType } from "@prisma/client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getViewerContext } from "@/server/auth";
 import { prisma } from "@/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +29,25 @@ function formatDuration(ms: number) {
 }
 
 export default async function AnalyticsPage() {
-  const proposal = await prisma.proposal.findUnique({
-    where: { shareId: DEMO_SHARE_ID },
+  const viewer = await getViewerContext();
+
+  if (!viewer) {
+    redirect("/app/sign-in");
+  }
+
+  if (viewer.orgUser.role !== "admin") {
+    return (
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <h1 className="text-2xl font-semibold">Analytics</h1>
+          <p className="text-sm text-muted-foreground">Analytics are restricted to organization administrators.</p>
+        </header>
+      </div>
+    );
+  }
+
+  const proposal = await prisma.proposal.findFirst({
+    where: { shareId: DEMO_SHARE_ID, orgId: viewer.org.id },
     include: {
       slides: { orderBy: { position: "asc" } },
       events: { orderBy: { createdAt: "asc" } },

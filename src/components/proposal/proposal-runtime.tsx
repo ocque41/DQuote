@@ -83,7 +83,7 @@ function usePricing(proposalId: string, selectionMap: Record<string, number>) {
         }
         throw error;
       }
-      return json as { subtotal: number; tax: number; total: number };
+      return json as { subtotal: number; discount: number; tax: number; total: number };
     },
     retry: false
   });
@@ -121,10 +121,11 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
       viewerIdRef.current = `viewer-${Math.random().toString(36).slice(2)}`;
     }
   }
-  const lastTotalsRef = useRef<{ subtotal: number; tax: number; total: number } | null>(
+  const lastTotalsRef = useRef<{ subtotal: number; discount: number; tax: number; total: number } | null>(
     props.initialTotals
       ? {
           subtotal: props.initialTotals.subtotal,
+          discount: props.initialTotals.discount ?? 0,
           tax: props.initialTotals.tax,
           total: props.initialTotals.total
         }
@@ -300,7 +301,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
         };
       });
   }, [slides, selections]);
-  const currentTotals = totals ?? props.initialTotals ?? { subtotal: 0, tax: 0, total: 0 };
+  const currentTotals = totals ?? props.initialTotals ?? { subtotal: 0, discount: 0, tax: 0, total: 0 };
   const estimatedDeposit = quoteState.deposit ??
     (currentTotals.total ? Math.round(currentTotals.total * DEFAULT_DEPOSIT_RATE * 100) / 100 : null);
   const depositDisplay = quoteState.deposit ?? estimatedDeposit;
