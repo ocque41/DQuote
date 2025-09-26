@@ -1,0 +1,29 @@
+# Node
+node_modules
+npm-debug.log*
+pnpm-lock.yaml
+
+# Next
+.next
+out
+
+# Build
+dist
+coverage
+
+# Env
+.env*
+!.env.example
+
+# OS
+.DS_Store
+
+# Prisma
+prisma/*.db
+prisma/migrations/*/migration_lock.toml
+
+# Editor
+.vscode
+.idea
+
+/src/generated/prisma
