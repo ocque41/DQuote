@@ -1,15 +1,23 @@
-# SPRINT 0 PLAN
+# SPRINT 1 PLAN
 
-## Item 1: Baseline Next.js + shadcn scaffold verification
-- Confirm the repo already satisfies the baseline scaffold (Next.js App Router with Tailwind and shadcn integration) and note any fixes if missing.
-
-### Acceptance Criteria
-- [x] `src/app` structure exists with an index route rendering without runtime errors.
-- [x] `pnpm dev` boots cleanly (no type errors) and the home page renders a placeholder view.
-
-## Item 2: Dependency baseline and documentation
-- Ensure required dependencies (zod, React Hook Form, Prisma, Stripe, Puppeteer, TanStack Query) are present and document the verification steps in README.
+## Item 1: Prisma data model + migrations
+- Model Org, User, Client, CatalogItem, ProposalTemplate, Slide, Option, PricingRule, Proposal, Selection, Quote, Asset, Event with enums to support Sprint 1 flow.
+- Produce a --create-only migration (checked in as raw SQL) and an init migration that bootstraps the schema locally.
 
 ### Acceptance Criteria
-- [x] `package.json` lists all required libraries with compatible versions.
-- [x] README includes up-to-date instructions to install dependencies and run the dev server.
+- [x] `prisma/schema.prisma` captures every required model + relation for the proposal runtime, including enum values for slide flow.
+- [x] `pnpm run migrate:create` generates SQL that is committed without being applied; `pnpm run migrate:apply` succeeds locally.
+
+## Item 2: Demo dataset seeding
+- Populate one organization with catalog, proposal, slides, and selections to exercise the interactive deck runtime.
+
+### Acceptance Criteria
+- [x] `pnpm exec prisma db seed` seeds the org, client, catalog items, proposal (status SENT), slides (INTRO, CHOICE_CORE, ADDONS, PORTFOLIO, REVIEW, ACCEPT), options, selections, quote, assets, and events.
+- [x] `pnpm exec prisma studio` shows all seeded entities under the expected relations.
+
+## Item 3: Developer docs update
+- Document how to run migrations and seed data for Sprint 1 setup.
+
+### Acceptance Criteria
+- [x] README gains instructions for running `pnpm run migrate:create`, `pnpm run migrate:apply`, and `pnpm exec prisma db seed`.
+- [x] README callouts reference the new seed data context for testing the proposal flow.
