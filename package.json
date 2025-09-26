@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:pricing": "tsx src/server/pricing/rules.test.ts",
     "migrate:create": "prisma migrate dev --create-only",
     "migrate:apply": "prisma migrate dev",
     "studio": "prisma studio",
