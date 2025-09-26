@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
@@ -55,11 +55,18 @@ function usePricing(proposalId: string, selectionMap: Record<string, number>) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proposalId, selections: payload })
       });
+      const json = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error("Unable to price selections");
+        const message = typeof json?.error === "string" ? json.error : "Unable to price selections";
+        const error = new Error(message) as Error & { violations?: unknown };
+        if (json && typeof json === "object" && json !== null && "violations" in json) {
+          error.violations = (json as Record<string, unknown>).violations;
+        }
+        throw error;
       }
-      return (await res.json()) as { subtotal: number; tax: number; total: number };
-    }
+      return json as { subtotal: number; tax: number; total: number };
+    },
+    retry: false
   });
 }
 
@@ -75,6 +82,17 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [, startLogTransition] = useTransition();
+  const lastTotalsRef = useRef<{ subtotal: number; tax: number; total: number } | null>(
+    props.initialTotals
+      ? {
+          subtotal: props.initialTotals.subtotal,
+          tax: props.initialTotals.tax,
+          total: props.initialTotals.total
+        }
+      : null
+  );
+  const pendingChangeRef = useRef<{ label: string } | null>(null);
+  const [summaryDelta, setSummaryDelta] = useState<{ label: string; amount: number; expiresAt: number } | null>(null);
 
   useEffect(() => {
     startTransition(() => updateSelectionsAction({ shareId, selections: selectionsToArray(selections) }));
@@ -91,7 +109,38 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     return () => clearTimeout(timeout);
   }, [selections, shareId, startTransition]);
 
-  const { data: totals } = usePricing(proposalId, selections);
+  const pricingQuery = usePricing(proposalId, selections);
+  const totals = pricingQuery.data;
+  const pricingError = pricingQuery.error instanceof Error ? pricingQuery.error.message : null;
+
+  useEffect(() => {
+    if (!totals) {
+      return;
+    }
+    const previousTotals = lastTotalsRef.current;
+    lastTotalsRef.current = totals;
+    if (!previousTotals) {
+      pendingChangeRef.current = null;
+      return;
+    }
+    const changeLabel = pendingChangeRef.current?.label;
+    pendingChangeRef.current = null;
+    const deltaAmount = totals.total - previousTotals.total;
+    if (!changeLabel || Math.abs(deltaAmount) < 0.005) {
+      return;
+    }
+    setSummaryDelta({ label: changeLabel, amount: deltaAmount, expiresAt: Date.now() + 1500 });
+  }, [totals]);
+
+  useEffect(() => {
+    if (!summaryDelta) {
+      return;
+    }
+    const timeout = setTimeout(() => {
+      setSummaryDelta(null);
+    }, Math.max(summaryDelta.expiresAt - Date.now(), 0));
+    return () => clearTimeout(timeout);
+  }, [summaryDelta]);
 
   const selectionTags = useMemo(() => {
     const tags = new Set<string>();
@@ -129,13 +178,27 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     [slides]
   );
 
+  const registerChange = (option: RuntimeOption, nextQty?: number) => {
+    if (typeof nextQty === "number" && nextQty < 0) {
+      return;
+    }
+    const baseLabel = option.catalogItem?.name ?? option.description ?? "Selection";
+    const label = typeof nextQty === "number" && nextQty > 1 ? `${baseLabel} ×${nextQty}` : baseLabel;
+    pendingChangeRef.current = { label };
+  };
+
   const setChoiceSelection = (slide: RuntimeSlide, option: RuntimeOption) => {
     setSelections((prev) => {
       const next = { ...prev };
       for (const o of slide.options.filter((opt) => !opt.isAddOn)) {
         next[o.id] = 0;
       }
-      next[option.id] = option.defaultQty ?? 1;
+      const desiredQty = option.defaultQty ?? 1;
+      if (prev[option.id] === desiredQty) {
+        return prev;
+      }
+      registerChange(option, desiredQty);
+      next[option.id] = desiredQty;
       return next;
     });
   };
@@ -144,6 +207,10 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     setSelections((prev) => {
       const qty = prev[option.id] ?? 0;
       const nextQty = qty > 0 ? 0 : option.defaultQty ?? 1;
+      if (qty === nextQty) {
+        return prev;
+      }
+      registerChange(option, nextQty);
       return { ...prev, [option.id]: nextQty };
     });
   };
@@ -154,7 +221,23 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
       const min = option.minQty ?? 0;
       const max = option.maxQty ?? 5;
       const nextQty = Math.min(Math.max(current + delta, min), max);
+      if (nextQty === current) {
+        return prev;
+      }
+      registerChange(option, nextQty);
       return { ...prev, [option.id]: nextQty };
+    });
+  };
+
+  const clearSelection = (option: RuntimeOption) => {
+    setSelections((prev) => {
+      if (!(prev[option.id] ?? 0)) {
+        return prev;
+      }
+      registerChange(option, 0);
+      const next = { ...prev };
+      next[option.id] = 0;
+      return next;
     });
   };
 
@@ -286,7 +369,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
                         Qty {selections[option.id]} · {formatCurrency(Number(option.priceOverride ?? option.catalogItem?.unitPrice ?? 0), currency)}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setSelections((prev) => ({ ...prev, [option.id]: 0 }))}>
+                    <Button variant="ghost" size="sm" onClick={() => clearSelection(option)}>
                       Remove
                     </Button>
                   </div>
@@ -341,7 +424,9 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
           currency={currency}
           totals={totals ?? null}
           initialTotals={props.initialTotals ?? null}
-          isSaving={isPending}
+          isSaving={isPending || acceptMutation.isPending || checkoutMutation.isPending}
+          delta={summaryDelta ? { label: summaryDelta.label, amount: summaryDelta.amount } : null}
+          errorMessage={pricingError}
         />
 
         {activeSlide.type !== "PORTFOLIO" ? (

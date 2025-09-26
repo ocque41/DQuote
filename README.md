@@ -100,6 +100,7 @@ Need to pull these components into another project with the familiar registry sy
 - `pnpm dev` — start Next.js in development mode.
 - `pnpm build` / `pnpm start` — production build & run.
 - `pnpm lint` — lint with Next.js config.
+- `pnpm test:pricing` — execute the pricing rules engine unit tests via `node:test`.
 - `pnpm run migrate:create` — generate migration SQL (requires Postgres).
 - `pnpm run migrate:apply` — apply migrations to the configured database.
 - `pnpm prisma db seed` — run the demo seed script via `tsx`.
@@ -125,14 +126,16 @@ registry/                # Custom shadcn registry items
 
 ## API Endpoints
 - `POST /api/pricing` — calculate subtotal, tax, and total for a proposal based on the provided selections.
+  - Responds with `400` when selections violate require/mutex rules and includes a `violations` array for context.
 
 ## Testing & Quality
 - `pnpm lint`
+- `pnpm test:pricing`
 - Run `pnpm dev` and interact with `/proposals/dq-demo-aurora` to validate live pricing & flows.
 - Stripe Checkout requires valid test keys; use Stripe CLI or dashboard to inspect sessions.
 
 ## Next Steps
 - Plug in Supabase auth & multi-org permissions.
 - Implement Stripe webhook handler to mark invoices paid.
-- Extend pricing engine to honor advanced `PricingRule` types (bundles, mutex, require).
+- Expand pricing rules to support stacked promotions and time-bound incentives.
 - Export proposals as PDF via headless Chromium for offline review.

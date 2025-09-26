@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/server/prisma";
+import { evaluatePricing, PricingLineItem } from "@/server/pricing/rules";
 
 const SelectionSchema = z.object({
   optionId: z.string().uuid(),
@@ -50,76 +51,59 @@ export async function POST(request: Request) {
     proposal.slides.flatMap((slide) => slide.options.map((option) => [option.id, option]))
   );
 
-  let subtotal = 0;
-  const selectedTags = new Set<string>();
-
-  for (const selection of parsed.data.selections) {
-    const option = optionMap.get(selection.optionId);
-    if (!option || selection.qty <= 0) {
-      continue;
-    }
-
-    const basePrice = Number(option.priceOverride ?? option.catalogItem?.unitPrice ?? 0);
-    subtotal += basePrice * selection.qty;
-
-    option.catalogItem?.tags?.forEach((tag) => selectedTags.add(tag));
-  }
-
-  let discountAmount = 0;
-  let taxRate: number | null = null;
-
-  for (const rule of proposal.org.rules) {
-    const config = rule.config as Record<string, unknown> | null;
-
-    if (rule.type === "discount_pct") {
-      const percentageValue = config?.["percentage"];
-      const percentage = typeof percentageValue === "number" ? percentageValue : Number(percentageValue ?? 0);
-      const triggersValue = config?.["triggerTags"];
-      const triggerTags = Array.isArray(triggersValue)
-        ? (triggersValue as unknown[]).filter((tag): tag is string => typeof tag === "string")
-        : [];
-      const triggered = triggerTags.length
-        ? triggerTags.every((tag) => selectedTags.has(tag))
-        : parsed.data.selections.length > 0;
-      if (percentage > 0 && triggered) {
-        discountAmount += subtotal * (percentage / 100);
+  const items = parsed.data.selections
+    .map((selection) => {
+      const option = optionMap.get(selection.optionId);
+      if (!option || selection.qty <= 0) {
+        return null;
       }
-    }
+      const basePrice = Number(option.priceOverride ?? option.catalogItem?.unitPrice ?? 0);
+      const item: PricingLineItem = {
+        optionId: option.id,
+        qty: selection.qty,
+        unitPrice: basePrice,
+        tags: option.catalogItem?.tags ?? []
+      };
+      return item;
+    })
+    .filter((item): item is PricingLineItem => Boolean(item));
 
-    if (rule.type === "discount_fixed") {
-      const amountValue = config?.["amount"];
-      const amount = typeof amountValue === "number" ? amountValue : Number(amountValue ?? 0);
-      if (amount > 0) {
-        discountAmount += amount;
-      }
-    }
-
-    if (rule.type === "tax_pct") {
-      const percentageValue = config?.["percentage"];
-      const percentage = typeof percentageValue === "number" ? percentageValue : Number(percentageValue ?? 0);
-      if (percentage > 0) {
-        taxRate = percentage / 100;
-      }
-    }
-  }
-
-  discountAmount = Math.min(discountAmount, subtotal);
-  const discountedSubtotal = subtotal - discountAmount;
-
-  if (taxRate === null && proposal.quote?.subtotal) {
+  const fallbackTaxRate = (() => {
+    if (!proposal.quote?.subtotal) return undefined;
     const quoteSubtotal = Number(proposal.quote.subtotal);
     const quoteTax = Number(proposal.quote.tax);
     if (quoteSubtotal > 0 && quoteTax >= 0) {
-      taxRate = quoteTax / quoteSubtotal;
+      return quoteTax / quoteSubtotal;
     }
+    return undefined;
+  })();
+
+  const evaluation = evaluatePricing({
+    items,
+    rules: proposal.org.rules.map((rule) => ({
+      id: rule.id,
+      type: rule.type,
+      name: rule.name,
+      config: (rule.config as Record<string, unknown> | null) ?? null
+    })),
+    fallbackTaxRate
+  });
+
+  if (evaluation.violations.length) {
+    return NextResponse.json(
+      {
+        error: evaluation.violations[0]?.message ?? "Selection conflict",
+        violations: evaluation.violations
+      },
+      { status: 400 }
+    );
   }
 
-  const tax = discountedSubtotal * (taxRate ?? 0);
-  const total = discountedSubtotal + tax;
+  const netSubtotal = evaluation.subtotal - evaluation.discount;
 
   return NextResponse.json({
-    subtotal: round(discountedSubtotal),
-    tax: round(tax),
-    total: round(total)
+    subtotal: round(netSubtotal),
+    tax: round(evaluation.tax),
+    total: round(evaluation.total)
   });
 }
