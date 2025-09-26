@@ -13,8 +13,6 @@
     "baseColor": "zinc"
   },
   "registries": {
-    "@cumulus": {
-      "url": "http://localhost:4000/{name}.json"
-    }
+    "@cumulus": "http://localhost:4000/r/{name}.json"
   }
 }
