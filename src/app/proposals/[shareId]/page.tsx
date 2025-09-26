@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Stripe from "stripe";
 
+import { EventType } from "@prisma/client";
+
 import { ProposalRuntime } from "@/components/proposal/proposal-runtime";
 import { PortfolioGrid } from "./portfolio";
 import { prisma } from "@/server/prisma";
@@ -57,15 +59,34 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
           typeof session.payment_intent === "string"
             ? session.payment_intent
             : session.payment_intent?.id ?? null;
-        await prisma.quote.update({
-          where: { id: proposal.quote.id },
-          data: {
-            stripeCheckoutSessionId: session.id,
-            stripePaymentIntentId: paymentIntentId,
-            depositPaidAt:
-              proposal.quote.depositPaidAt ?? new Date((session.created ?? Date.now() / 1000) * 1000)
-          }
-        });
+        const depositAlreadyRecorded = Boolean(proposal.quote.depositPaidAt);
+        const depositAmount = Number(proposal.quote.deposit ?? 0);
+        await prisma.$transaction([
+          prisma.quote.update({
+            where: { id: proposal.quote.id },
+            data: {
+              stripeCheckoutSessionId: session.id,
+              stripePaymentIntentId: paymentIntentId,
+              depositPaidAt:
+                proposal.quote.depositPaidAt ?? new Date((session.created ?? Date.now() / 1000) * 1000)
+            }
+          }),
+          ...(depositAlreadyRecorded
+            ? []
+            : [
+                prisma.event.create({
+                  data: {
+                    proposalId: proposal.id,
+                    type: EventType.PAY,
+                    data: {
+                      sessionId: session.id,
+                      paymentIntentId,
+                      amount: depositAmount || null
+                    }
+                  }
+                })
+              ])
+        ]);
         proposal =
           (await prisma.proposal.findUnique({
             where: { shareId },

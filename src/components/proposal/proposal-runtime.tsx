@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
+import { EventType } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,6 +100,14 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [, startLogTransition] = useTransition();
+  const viewerIdRef = useRef<string>();
+  if (!viewerIdRef.current) {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      viewerIdRef.current = crypto.randomUUID();
+    } else {
+      viewerIdRef.current = `viewer-${Math.random().toString(36).slice(2)}`;
+    }
+  }
   const lastTotalsRef = useRef<{ subtotal: number; tax: number; total: number } | null>(
     props.initialTotals
       ? {
@@ -109,6 +119,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   );
   const pendingChangeRef = useRef<{ label: string } | null>(null);
   const [summaryDelta, setSummaryDelta] = useState<{ label: string; amount: number; expiresAt: number } | null>(null);
+  const loggedPortfolioSlidesRef = useRef<Set<string>>(new Set());
   const acceptanceForm = useForm<AcceptanceFormValues>({
     resolver: zodResolver(ACCEPTANCE_SCHEMA),
     mode: "onChange",
@@ -129,13 +140,58 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const depositPaid = Boolean(quoteState.depositPaidAt);
   const receiptUrl = quoteState.pdfUrl ?? null;
 
+  const optionMeta = useMemo(() => {
+    const map = new Map<string, { slideId: string; slideType: string; slideTitle?: string | null }>();
+    for (const slide of slides) {
+      for (const option of slide.options) {
+        map.set(option.id, { slideId: slide.id, slideType: slide.type, slideTitle: slide.title });
+      }
+    }
+    return map;
+  }, [slides]);
+
+  const logRuntimeEvent = useCallback(
+    (type: EventType, data?: Record<string, unknown>) => {
+      const viewerId = viewerIdRef.current;
+      startLogTransition(() =>
+        logEventAction({
+          shareId,
+          type,
+          data: {
+            viewerId,
+            ...data
+          }
+        })
+      );
+    },
+    [shareId, startLogTransition]
+  );
+
   useEffect(() => {
     startTransition(() => updateSelectionsAction({ shareId, selections: selectionsToArray(selections) }));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    startLogTransition(() => logEventAction({ shareId, type: "VIEW", data: { slide: activeIndex + 1 } }));
-  }, [activeIndex, shareId, startLogTransition]);
+    const activeSlide = slides[activeIndex];
+    if (!activeSlide) {
+      return;
+    }
+    logRuntimeEvent(EventType.VIEW, {
+      slideIndex: activeIndex,
+      slideId: activeSlide.id,
+      slideType: activeSlide.type,
+      slideTitle: activeSlide.title
+    });
+
+    if (activeSlide.type === "PORTFOLIO" && !loggedPortfolioSlidesRef.current.has(activeSlide.id)) {
+      loggedPortfolioSlidesRef.current.add(activeSlide.id);
+      logRuntimeEvent(EventType.PORTFOLIO_OPEN, {
+        slideIndex: activeIndex,
+        slideId: activeSlide.id,
+        slideTitle: activeSlide.title
+      });
+    }
+  }, [activeIndex, logRuntimeEvent, slides]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -262,58 +318,102 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     pendingChangeRef.current = { label };
   };
 
-  const setChoiceSelection = (slide: RuntimeSlide, option: RuntimeOption) => {
-    setSelections((prev) => {
-      const next = { ...prev };
-      for (const o of slide.options.filter((opt) => !opt.isAddOn)) {
-        next[o.id] = 0;
-      }
-      const desiredQty = option.defaultQty ?? 1;
-      if (prev[option.id] === desiredQty) {
-        return prev;
-      }
-      registerChange(option, desiredQty);
-      next[option.id] = desiredQty;
-      return next;
+  const emitSelectionEvent = (type: EventType.SELECT | EventType.DESELECT, option: RuntimeOption, qty: number) => {
+    const meta = optionMeta.get(option.id);
+    logRuntimeEvent(type, {
+      optionId: option.id,
+      optionLabel: option.catalogItem?.name ?? option.description,
+      quantity: qty,
+      slideId: meta?.slideId,
+      slideType: meta?.slideType,
+      slideTitle: meta?.slideTitle
     });
   };
 
+  const setChoiceSelection = (slide: RuntimeSlide, option: RuntimeOption) => {
+    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
+    setSelections((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const o of slide.options.filter((opt) => !opt.isAddOn && opt.id !== option.id)) {
+        if ((prev[o.id] ?? 0) > 0) {
+          next[o.id] = 0;
+          changed = true;
+          eventsToLog.push({ type: EventType.DESELECT, option: o, qty: 0 });
+        }
+      }
+      const desiredQty = option.defaultQty ?? 1;
+      if (prev[option.id] !== desiredQty) {
+        registerChange(option, desiredQty);
+        next[option.id] = desiredQty;
+        changed = true;
+        eventsToLog.push({ type: EventType.SELECT, option, qty: desiredQty });
+      }
+      if (!changed) {
+        eventsToLog.length = 0;
+        return prev;
+      }
+      return next;
+    });
+    for (const event of eventsToLog) {
+      emitSelectionEvent(event.type, event.option, event.qty);
+    }
+  };
+
   const toggleAddon = (option: RuntimeOption) => {
+    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       const qty = prev[option.id] ?? 0;
       const nextQty = qty > 0 ? 0 : option.defaultQty ?? 1;
       if (qty === nextQty) {
+        eventsToLog.length = 0;
         return prev;
       }
       registerChange(option, nextQty);
+      eventsToLog.push({ type: nextQty > 0 ? EventType.SELECT : EventType.DESELECT, option, qty: nextQty });
       return { ...prev, [option.id]: nextQty };
     });
+    for (const event of eventsToLog) {
+      emitSelectionEvent(event.type, event.option, event.qty);
+    }
   };
 
   const adjustQuantity = (option: RuntimeOption, delta: number) => {
+    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       const current = prev[option.id] ?? option.defaultQty ?? 0;
       const min = option.minQty ?? 0;
       const max = option.maxQty ?? 5;
       const nextQty = Math.min(Math.max(current + delta, min), max);
       if (nextQty === current) {
+        eventsToLog.length = 0;
         return prev;
       }
       registerChange(option, nextQty);
+      eventsToLog.push({ type: nextQty > 0 ? EventType.SELECT : EventType.DESELECT, option, qty: nextQty });
       return { ...prev, [option.id]: nextQty };
     });
+    for (const event of eventsToLog) {
+      emitSelectionEvent(event.type, event.option, event.qty);
+    }
   };
 
   const clearSelection = (option: RuntimeOption) => {
+    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       if (!(prev[option.id] ?? 0)) {
+        eventsToLog.length = 0;
         return prev;
       }
       registerChange(option, 0);
       const next = { ...prev };
       next[option.id] = 0;
+      eventsToLog.push({ type: EventType.DESELECT, option, qty: 0 });
       return next;
     });
+    for (const event of eventsToLog) {
+      emitSelectionEvent(event.type, event.option, event.qty);
+    }
   };
 
   const acceptMutation = useMutation<
@@ -349,7 +449,6 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
         }
         throw new Error(message);
       }
-      await logEventAction({ shareId, type: "ACCEPT", data: { signatureId: (json as { signatureId?: string })?.signatureId } });
       return (json ?? {}) as { deposit?: number | null; signatureId?: string | null; pdfUrl?: string | null };
     },
     onMutate: () => {
@@ -396,7 +495,6 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
       if (payload.url) {
         window.location.href = payload.url;
       }
-      await logEventAction({ shareId, type: "PAY" });
       return payload;
     },
     onMutate: () => {

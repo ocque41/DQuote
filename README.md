@@ -28,12 +28,15 @@ pnpm dev
 ```
 Visit `http://localhost:3000/` for the marketing site, `/app` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
 
+An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
+
 ### Environment Variables
 `.env.example` documents the required configuration:
 - `DATABASE_URL` / `DIRECT_URL`: Supabase Postgres connection strings.
 - `NEXT_PUBLIC_APP_URL`: Base URL for success/cancel redirects.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - `ENCRYPTION_KEY`: Reserved for future secure payload handling (32 chars).
+- `DEMO_PROPOSAL_SHARE_ID` (optional): Overrides the proposal used by the analytics dashboard (`dq-demo-aurora` by default).
 
 ## Database & Prisma Workflow
 1. **Generate SQL migration (manual review first):**
@@ -119,6 +122,12 @@ Need to pull these components into another project with the familiar registry sy
 6. Hit **Pay deposit via Stripe** to launch Checkout (requires valid test keys); returning with `session_id` marks the quote as paid and updates the runtime badge.
 7. Download the PDF receipt from the success panel and share it with the client if needed.
 8. Use the **Schedule kickoff demo** button to drive the Calendly hand-off.
+9. Visit `/admin/analytics` to review per-slide completion, dwell time, and event totals captured during the run-through.
+
+## Analytics & Event Tracking
+- The proposal runtime logs lifecycle events (`VIEW`, `SELECT`, `DESELECT`, `PORTFOLIO_OPEN`) using server actions so admins can reconstruct viewer funnels.
+- The acceptance flow writes `ACCEPT` and `PAY` events from the backend, ensuring Stripe-confirmed payments and signatures are tracked even if the client closes the browser early.
+- The analytics dashboard aggregates those events into completion percentages per slide, average time spent between slides, and total counts per event type for quick health checks.
 
 ## Project Structure Highlights
 ```

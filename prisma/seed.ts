@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import {
   PrismaClient,
   Prisma,
@@ -285,17 +287,211 @@ async function main() {
     }
   });
 
+  const orderedSlides = await prisma.slide.findMany({
+    where: { proposalId: proposal.id },
+    orderBy: { position: "asc" },
+    include: { options: true }
+  });
+  const introSlide = orderedSlides.find((slide) => slide.type === SlideType.INTRO);
+  const choiceCoreSlide = orderedSlides.find((slide) => slide.type === SlideType.CHOICE_CORE);
+  const addonsSlide = orderedSlides.find((slide) => slide.type === SlideType.ADDONS);
+  const portfolioSlide = orderedSlides.find((slide) => slide.type === SlideType.PORTFOLIO);
+  const reviewSlide = orderedSlides.find((slide) => slide.type === SlideType.REVIEW);
+  const acceptSlide = orderedSlides.find((slide) => slide.type === SlideType.ACCEPT);
+
+  const choiceOptions = choiceCoreSlide?.options ?? [];
+  const addonOptions = addonsSlide?.options ?? [];
+
+  const timelineStart = new Date(Date.now() - 1000 * 60 * 90);
+  const atMinute = (minutes: number) => new Date(timelineStart.getTime() + minutes * 60 * 1000);
+  const viewerPrimary = "viewer-seed-primary";
+  const viewerSecondary = "viewer-seed-secondary";
+  const acceptedSignature = randomUUID();
+
   await prisma.event.createMany({
     data: [
       {
         proposalId: proposal.id,
         type: EventType.VIEW,
-        data: { slide: 1 }
+        createdAt: atMinute(0),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: introSlide?.id,
+          slideType: introSlide?.type,
+          slideTitle: introSlide?.title,
+          slideIndex: 0
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(2),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: choiceCoreSlide?.id,
+          slideType: choiceCoreSlide?.type,
+          slideTitle: choiceCoreSlide?.title,
+          slideIndex: 1
+        }
       },
       {
         proposalId: proposal.id,
         type: EventType.SELECT,
-        data: { optionCode: "DJ-BASIC" }
+        createdAt: atMinute(3),
+        data: {
+          viewerId: viewerPrimary,
+          optionId: choiceOptions[0]?.id,
+          optionLabel: choiceOptions[0]?.description,
+          quantity: 1,
+          slideId: choiceCoreSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(6),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: addonsSlide?.id,
+          slideType: addonsSlide?.type,
+          slideTitle: addonsSlide?.title,
+          slideIndex: 2
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.SELECT,
+        createdAt: atMinute(7),
+        data: {
+          viewerId: viewerPrimary,
+          optionId: addonOptions[0]?.id,
+          optionLabel: addonOptions[0]?.description,
+          quantity: 1,
+          slideId: addonsSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(9),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: portfolioSlide?.id,
+          slideType: portfolioSlide?.type,
+          slideTitle: portfolioSlide?.title,
+          slideIndex: 3
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.PORTFOLIO_OPEN,
+        createdAt: atMinute(9),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: portfolioSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(11),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: reviewSlide?.id,
+          slideType: reviewSlide?.type,
+          slideTitle: reviewSlide?.title,
+          slideIndex: 4
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(14),
+        data: {
+          viewerId: viewerPrimary,
+          slideId: acceptSlide?.id,
+          slideType: acceptSlide?.type,
+          slideTitle: acceptSlide?.title,
+          slideIndex: 5
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.ACCEPT,
+        createdAt: atMinute(16),
+        data: {
+          viewerId: viewerPrimary,
+          signatureId: acceptedSignature
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.PAY,
+        createdAt: atMinute(25),
+        data: {
+          viewerId: viewerPrimary,
+          amount: Number(total) * 0.3
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(5),
+        data: {
+          viewerId: viewerSecondary,
+          slideId: introSlide?.id,
+          slideType: introSlide?.type,
+          slideTitle: introSlide?.title,
+          slideIndex: 0
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(8),
+        data: {
+          viewerId: viewerSecondary,
+          slideId: choiceCoreSlide?.id,
+          slideType: choiceCoreSlide?.type,
+          slideTitle: choiceCoreSlide?.title,
+          slideIndex: 1
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.SELECT,
+        createdAt: atMinute(9),
+        data: {
+          viewerId: viewerSecondary,
+          optionId: choiceOptions[1]?.id,
+          optionLabel: choiceOptions[1]?.description,
+          quantity: 1,
+          slideId: choiceCoreSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.DESELECT,
+        createdAt: atMinute(10),
+        data: {
+          viewerId: viewerSecondary,
+          optionId: choiceOptions[1]?.id,
+          optionLabel: choiceOptions[1]?.description,
+          quantity: 0,
+          slideId: choiceCoreSlide?.id
+        }
+      },
+      {
+        proposalId: proposal.id,
+        type: EventType.VIEW,
+        createdAt: atMinute(12),
+        data: {
+          viewerId: viewerSecondary,
+          slideId: reviewSlide?.id,
+          slideType: reviewSlide?.type,
+          slideTitle: reviewSlide?.title,
+          slideIndex: 4
+        }
       }
     ]
   });

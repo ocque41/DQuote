@@ -98,3 +98,20 @@
 ### Acceptance Criteria
 - [x] Accepting a proposal produces a PDF file persisted to disk (or storage) and saves its URL on the quote record.
 - [x] The proposal runtime exposes a “Download PDF” control once acceptance completes, returning the stored PDF.
+
+# SPRINT 7 PLAN
+
+## Item 1: Event instrumentation for proposal funnel
+- Record lifecycle events (view/select/deselect/accept/pay/portfolio interactions) when visitors interact with the proposal runtime and backend handlers.
+
+### Acceptance Criteria
+- [x] Quote lifecycle endpoints and runtime UI create Event records with correct `type`, metadata, and timestamps for demo data.
+- [x] Portfolio open, selection, and acceptance flows persist events without duplicate writes during normal navigation.
+
+## Item 2: Admin analytics dashboard
+- Build `/app/admin/analytics` page that summarizes funnel performance (per-slide completion rates, timings) for the demo proposal using stored events.
+
+### Acceptance Criteria
+- [x] Admin analytics view renders aggregate counts and completion percentages for each slide of the demo proposal without runtime errors.
+- [x] Dashboard surfaces average time on step derived from event timestamps for completed slide views.
+
