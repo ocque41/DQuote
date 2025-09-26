@@ -1,4 +1,11 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import {
+  PrismaClient,
+  Prisma,
+  SlideType,
+  OptionKind,
+  EventType,
+  ProposalStatus
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -78,28 +85,32 @@ async function main() {
         catalogItemId: djBasic.id,
         title: "Skyline Ballroom Mix",
         type: "image",
-        url: "https://images.unsplash.com/photo-1525282410961-45b0a7a5e225"
+        url: "https://images.unsplash.com/photo-1525282410961-45b0a7a5e225",
+        tags: ["dj", "core", "music"]
       },
       {
         orgId: org.id,
         catalogItemId: djPro.id,
         title: "Sunset Terrace First Dance",
         type: "video",
-        url: "https://videos.pexels.com/video-files/856098/856098-hd_1280_720_30fps.mp4"
+        url: "https://videos.pexels.com/video-files/856098/856098-hd_1280_720_30fps.mp4",
+        tags: ["dj", "premium", "music"]
       },
       {
         orgId: org.id,
         catalogItemId: lightingBasic.id,
         title: "Warm Amber Package",
         type: "image",
-        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4"
+        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4",
+        tags: ["lighting", "ambience"]
       },
       {
         orgId: org.id,
         catalogItemId: lightingPro.id,
         title: "Cold Spark Reveal",
         type: "image",
-        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4"
+        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4",
+        tags: ["lighting", "premium"]
       }
     ]
   });
@@ -121,7 +132,7 @@ async function main() {
       title: "Summit Ventures Launch Night",
       shareId: "dq-demo-aurora",
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
-      status: "SENT",
+      status: ProposalStatus.SENT,
       theme: {
         primary: "#1E40AF",
         secondary: "#F97316",
@@ -130,32 +141,45 @@ async function main() {
     }
   });
 
-  const slides = await prisma.$transaction([
+  const [, choiceSlide, addOnSlide] = await prisma.$transaction([
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "CHOICE",
+        type: SlideType.INTRO,
+        title: "Welcome to your launch night experience",
+        subtitle: "A tailored outline of entertainment, ambiance, and acceptance steps.",
+        position: 1,
+        meta: {
+          headline: "Summit Ventures product reveal",
+          agenda: ["Cocktail hour soundscape", "Live launch moment", "After-party DJ"]
+        }
+      }
+    }),
+    prisma.slide.create({
+      data: {
+        proposalId: proposal.id,
+        type: SlideType.CHOICE_CORE,
         title: "Choose your entertainment vibe",
         subtitle: "Each option includes setup, planning calls, and live mixing.",
-        position: 1,
+        position: 2,
         options: {
           create: [
             {
               catalogItemId: djBasic.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "Reception DJ for up to 200 guests",
               isDefault: true,
               defaultQty: 1
             },
             {
               catalogItemId: djPro.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "Full-day DJ + MC with intelligent lighting",
               isDefault: false,
               defaultQty: 1
             },
             {
-              kind: "bundle",
+              kind: OptionKind.BUNDLE,
               description: "Hybrid: DJ Essentials + Atmosphere Lighting",
               priceOverride: new Prisma.Decimal(1650),
               isDefault: false,
@@ -168,22 +192,22 @@ async function main() {
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "CHOICE",
+        type: SlideType.ADDONS,
         title: "Enhance the experience",
         subtitle: "Add-ons can be toggled at any time.",
-        position: 2,
+        position: 3,
         options: {
           create: [
             {
               catalogItemId: lightingBasic.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "Ambient uplighting and dance floor wash",
               isAddOn: true,
               defaultQty: 1
             },
             {
               catalogItemId: lightingPro.id,
-              kind: "item",
+              kind: OptionKind.ITEM,
               description: "DMX lighting, haze, and cold spark intro",
               isAddOn: true,
               defaultQty: 1
@@ -195,10 +219,10 @@ async function main() {
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "PORTFOLIO",
+        type: SlideType.PORTFOLIO,
         title: "See it in action",
         subtitle: "Portfolio curated based on your selections",
-        position: 3,
+        position: 4,
         meta: {
           layout: "grid",
           columns: 3
@@ -208,23 +232,21 @@ async function main() {
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "REVIEW",
+        type: SlideType.REVIEW,
         title: "Your investment overview",
-        position: 4
+        position: 5
       }
     }),
     prisma.slide.create({
       data: {
         proposalId: proposal.id,
-        type: "ACCEPT",
+        type: SlideType.ACCEPT,
         title: "Lock it in",
         subtitle: "Sign & pay the deposit to confirm",
-        position: 5
+        position: 6
       }
     })
   ]);
-
-  const [choiceSlide, addOnSlide] = slides;
 
   const defaultSelection = await prisma.selection.create({
     data: {
@@ -267,12 +289,12 @@ async function main() {
     data: [
       {
         proposalId: proposal.id,
-        type: "view",
+        type: EventType.VIEW,
         data: { slide: 1 }
       },
       {
         proposalId: proposal.id,
-        type: "select",
+        type: EventType.SELECT,
         data: { optionCode: "DJ-BASIC" }
       }
     ]
@@ -301,24 +323,34 @@ async function main() {
       slides: {
         create: [
           {
-            type: "CHOICE",
-            title: "Entertainment tier",
+            type: SlideType.INTRO,
+            title: "Set the stage",
             position: 1
           },
           {
-            type: "CHOICE",
-            title: "Enhancements",
+            type: SlideType.CHOICE_CORE,
+            title: "Entertainment tier",
             position: 2
           },
           {
-            type: "PORTFOLIO",
-            title: "Proof points",
+            type: SlideType.ADDONS,
+            title: "Enhancements",
             position: 3
           },
           {
-            type: "ACCEPT",
-            title: "Next steps",
+            type: SlideType.PORTFOLIO,
+            title: "Proof points",
             position: 4
+          },
+          {
+            type: SlideType.REVIEW,
+            title: "Investment overview",
+            position: 5
+          },
+          {
+            type: SlideType.ACCEPT,
+            title: "Next steps",
+            position: 6
           }
         ]
       }

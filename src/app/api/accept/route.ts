@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { EventType, ProposalStatus } from "@prisma/client";
+
 import { prisma } from "@/server/prisma";
 
 const BodySchema = z.object({
@@ -16,14 +18,14 @@ export async function POST(req: Request) {
 
   const proposal = await prisma.proposal.update({
     where: { shareId: parsed.data.shareId },
-    data: { status: "ACCEPTED" },
+    data: { status: ProposalStatus.ACCEPTED },
     select: { id: true }
   });
 
   await prisma.event.create({
     data: {
       proposalId: proposal.id,
-      type: "accept"
+      type: EventType.ACCEPT
     }
   });
 

@@ -1,16 +1,24 @@
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { PortfolioGrid } from "./portfolio";
 import { ProposalRuntime } from "@/components/proposal/proposal-runtime";
+import { PortfolioGrid } from "./portfolio";
 import { prisma } from "@/server/prisma";
 
 interface ProposalPageProps {
-  params: { shareId: string };
+  params: Promise<{ shareId: string }>;
 }
 
-export default async function ProposalPage({ params }: ProposalPageProps) {
+export const metadata: Metadata = {
+  title: "Proposal",
+  description: "Interactive proposal runtime"
+};
+
+export default async function PublicProposalPage({ params }: ProposalPageProps) {
+  const { shareId } = await params;
+
   const proposal = await prisma.proposal.findUnique({
-    where: { shareId: params.shareId },
+    where: { shareId },
     include: {
       org: true,
       client: true,
@@ -20,9 +28,7 @@ export default async function ProposalPage({ params }: ProposalPageProps) {
         orderBy: { position: "asc" },
         include: {
           options: {
-            include: {
-              catalogItem: true
-            }
+            include: { catalogItem: true }
           }
         }
       }
@@ -33,27 +39,51 @@ export default async function ProposalPage({ params }: ProposalPageProps) {
     notFound();
   }
 
-  const assets = await prisma.asset.findMany({
-    where: { orgId: proposal.orgId },
-    include: { catalogItem: true }
+  const selectedOptionIds = new Set(proposal.selections.map((selection) => selection.optionId));
+  const selectedTags = new Set<string>();
+  for (const slide of proposal.slides) {
+    for (const option of slide.options) {
+      if (selectedOptionIds.has(option.id)) {
+        option.catalogItem?.tags.forEach((tag) => selectedTags.add(tag));
+      }
+    }
+  }
+
+  const activeTags = Array.from(selectedTags);
+  const primaryAssets = await prisma.asset.findMany({
+    where: {
+      orgId: proposal.orgId,
+      ...(activeTags.length ? { tags: { hasSome: activeTags } } : {})
+    },
+    orderBy: { createdAt: "desc" },
+    take: 4
   });
 
+  let assets = primaryAssets;
+  if (assets.length < 2) {
+    const filler = await prisma.asset.findMany({
+      where: {
+        orgId: proposal.orgId,
+        id: { notIn: assets.map((asset) => asset.id) }
+      },
+      orderBy: { createdAt: "desc" },
+      take: Math.max(0, Math.min(4 - assets.length, Math.max(2 - assets.length, 0)))
+    });
+    assets = [...assets, ...filler];
+  }
+  if (assets.length > 4) {
+    assets = assets.slice(0, 4);
+  }
+
   return (
-    <div className="space-y-8">
-      <header className="rounded-3xl border bg-card p-8 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{proposal.org.name}</p>
-            <h1 className="text-3xl font-semibold">{proposal.title}</h1>
-            <p className="text-sm text-muted-foreground">
-              For {proposal.client.name}
-              {proposal.client.company ? ` · ${proposal.client.company}` : ""}
-            </p>
-          </div>
-          <div className="rounded-full border bg-muted px-4 py-2 text-sm text-muted-foreground">
-            Share link: /proposals/{proposal.shareId}
-          </div>
-        </div>
+    <main className="mx-auto max-w-6xl space-y-12 px-4 py-10 md:px-6">
+      <header className="space-y-4 text-center">
+        <p className="text-sm uppercase tracking-wide text-muted-foreground">{proposal.org.name}</p>
+        <h1 className="text-3xl font-semibold md:text-4xl">{proposal.title}</h1>
+        <p className="text-sm text-muted-foreground">
+          Prepared for {proposal.client.name}
+          {proposal.client.company ? ` · ${proposal.client.company}` : ""}
+        </p>
       </header>
 
       <ProposalRuntime
@@ -98,7 +128,7 @@ export default async function ProposalPage({ params }: ProposalPageProps) {
           title: asset.title,
           type: asset.type,
           url: asset.url,
-          tags: asset.catalogItem?.tags ?? []
+          tags: asset.tags ?? []
         }))}
         initialTotals={
           proposal.quote
@@ -113,21 +143,23 @@ export default async function ProposalPage({ params }: ProposalPageProps) {
         theme={proposal.theme as Record<string, unknown> | null}
       />
 
-      <section className="rounded-3xl border bg-muted/40 p-8">
-        <h2 className="text-xl font-semibold">Full portfolio</h2>
-        <p className="text-sm text-muted-foreground">Assets linked to your catalog appear here for self-serve browsing.</p>
-        <div className="mt-6">
-          <PortfolioGrid
-            assets={assets.map((asset) => ({
-              id: asset.id,
-              title: asset.title,
-              type: asset.type,
-              url: asset.url,
-              tags: asset.catalogItem?.tags ?? []
-            }))}
-          />
+      <section className="space-y-4">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">See more from our portfolio</h2>
+          <p className="text-sm text-muted-foreground">
+            Additional proof points curated from recent events.
+          </p>
         </div>
+        <PortfolioGrid
+          assets={assets.map((asset) => ({
+            id: asset.id,
+            title: asset.title,
+            type: asset.type,
+            url: asset.url,
+            tags: asset.tags ?? []
+          }))}
+        />
       </section>
-    </div>
+    </main>
   );
 }
