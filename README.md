@@ -123,6 +123,9 @@ docs/user-stories        # User stories for Sprint 1
 registry/                # Custom shadcn registry items
 ```
 
+## API Endpoints
+- `POST /api/pricing` — calculate subtotal, tax, and total for a proposal based on the provided selections.
+
 ## Testing & Quality
 - `pnpm lint`
 - Run `pnpm dev` and interact with `/proposals/dq-demo-aurora` to validate live pricing & flows.
