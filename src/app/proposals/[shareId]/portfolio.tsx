@@ -2,13 +2,7 @@ import Image from "next/image";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export type PortfolioAsset = {
-  id: string;
-  title?: string | null;
-  type: string;
-  url: string;
-  tags?: string[];
-};
+import { PortfolioAsset } from "@/components/proposal/types";
 
 export function PortfolioGrid({ assets }: { assets: PortfolioAsset[] }) {
   if (!assets.length) {

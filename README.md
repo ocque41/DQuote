@@ -12,6 +12,14 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 
 > **Binary assets policy:** The project intentionally ships without binary image assets (including the default Next.js favicon) so that pull requests remain compatible with the “no binary files” guardrail in our workflow. When you scaffold new features, replace media with text-based placeholders (SVG-as-text, data URIs, etc.) or host assets externally.
 
+## Baseline Dependencies
+The project already includes the core libraries required for Sprint 0. Key packages to verify after running `pnpm install`:
+- `zod`, `react-hook-form`, and `@hookform/resolvers` for form validation.
+- `@tanstack/react-query` and `@tanstack/react-query-devtools` for client data fetching.
+- `prisma` and `@prisma/client` for database access.
+- `stripe` and `@stripe/stripe-js` for payments.
+- `puppeteer` for PDF generation.
+
 ## Getting Started
 ```bash
 pnpm install
@@ -31,18 +39,18 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 1. **Generate SQL migration (manual review first):**
    ```bash
    # Requires a running Postgres database when using migrate dev
-   DIRECT_URL=... DATABASE_URL=... pnpm run migrate:create
+   DIRECT_URL=... DATABASE_URL=... pnpm run migrate:create -- --name init
    ```
-   In this workspace we generated `prisma/migrations/20250101000000_init/migration.sql` via `prisma migrate diff` for manual application. Point the command at your Supabase instance to regenerate as needed.
+   The command writes a new folder under `prisma/migrations/` (e.g. `20250926194629_init/migration.sql`) without applying it so you can inspect the SQL before rollout.
 2. **Apply migrations locally or against Supabase:**
    ```bash
    DIRECT_URL=... DATABASE_URL=... pnpm run migrate:apply
    ```
 3. **Seed demo data:**
    ```bash
-   pnpm prisma db seed
+   pnpm exec prisma db seed
    ```
-   The seed script inserts an org, catalog items, assets, a proposal with slides, and initial selections for the Summit Ventures launch example.
+   The seed script inserts an org, catalog items, assets, analytics events, and a proposal with the slide flow `INTRO → CHOICE_CORE → ADDONS → PORTFOLIO → REVIEW → ACCEPT` so you can exercise the interactive deck end-to-end.
 
 > **Note:** Prisma warns that the `package.json#prisma` config is deprecated. For Supabase deployment, you can move the `seed` command into a `prisma.config.ts` or Vercel build step when ready.
 
@@ -114,6 +122,9 @@ prisma/                  # Schema, migrations, seed data
 docs/user-stories        # User stories for Sprint 1
 registry/                # Custom shadcn registry items
 ```
+
+## API Endpoints
+- `POST /api/pricing` — calculate subtotal, tax, and total for a proposal based on the provided selections.
 
 ## Testing & Quality
 - `pnpm lint`
