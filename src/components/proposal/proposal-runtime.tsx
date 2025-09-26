@@ -11,9 +11,10 @@ import { PortfolioGrid } from "@/app/proposals/[shareId]/portfolio";
 import { logEventAction, updateSelectionsAction } from "@/app/proposals/[shareId]/actions";
 
 import { OptionCard } from "./option-card";
+import { PortfolioPanel } from "./portfolio-panel";
 import { ProgressSteps } from "./progress-steps";
 import { SummaryTray } from "./summary-tray";
-import { ProposalRuntimeProps, RuntimeOption, RuntimeSelection, RuntimeSlide } from "./types";
+import { PortfolioAsset, ProposalRuntimeProps, RuntimeOption, RuntimeSelection, RuntimeSlide } from "./types";
 
 function calculateDefaultSelections(slides: RuntimeSlide[]): Record<string, number> {
   const next: Record<string, number> = {};
@@ -154,9 +155,29 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     return Array.from(tags);
   }, [slides, selections]);
 
-  const filteredAssets = useMemo(() => {
-    if (!selectionTags.length) return assets;
-    return assets.filter((asset) => asset.tags?.some((tag) => selectionTags.includes(tag)));
+  const matchingAssets = useMemo<PortfolioAsset[]>(() => {
+    if (!assets.length) return [];
+    if (!selectionTags.length) {
+      return assets;
+    }
+    const matches = assets.filter((asset) => asset.tags?.some((tag) => selectionTags.includes(tag)));
+    return matches.length ? matches : assets;
+  }, [assets, selectionTags]);
+
+  const curatedAssets = useMemo<PortfolioAsset[]>(() => {
+    if (!assets.length) return [];
+    const baseMatches = selectionTags.length
+      ? assets.filter((asset) => asset.tags?.some((tag) => selectionTags.includes(tag)))
+      : [...assets];
+    const base = baseMatches.length ? baseMatches : assets;
+    if (base.length >= 4) {
+      return base.slice(0, 4);
+    }
+    if (base.length >= 2) {
+      return base;
+    }
+    const filler = assets.filter((asset) => !base.some((item) => item.id === asset.id));
+    return [...base, ...filler].slice(0, Math.min(4, assets.length));
   }, [assets, selectionTags]);
 
   const activeSlide = slides[activeIndex];
@@ -350,8 +371,10 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
           </div>
         ) : null}
 
-        {activeSlide.type === "PORTFOLIO" ? (
-          <PortfolioGrid assets={filteredAssets} />
+        {activeSlide.type === "PORTFOLIO" ? <PortfolioGrid assets={matchingAssets} /> : null}
+
+        {activeSlide.type !== "PORTFOLIO" ? (
+          <PortfolioPanel assets={curatedAssets} activeTags={selectionTags} />
         ) : null}
 
         {activeSlide.type === "REVIEW" ? (
@@ -437,7 +460,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
                 <CardDescription>Matched to selected tags: {selectionTags.length ? selectionTags.join(", ") : "All"}</CardDescription>
               </CardHeader>
               <CardContent>
-                <PortfolioGrid assets={filteredAssets.slice(0, 2)} />
+                <PortfolioGrid assets={curatedAssets.slice(0, 2)} />
               </CardContent>
             </Card>
           </div>

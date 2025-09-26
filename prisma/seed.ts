@@ -85,28 +85,32 @@ async function main() {
         catalogItemId: djBasic.id,
         title: "Skyline Ballroom Mix",
         type: "image",
-        url: "https://images.unsplash.com/photo-1525282410961-45b0a7a5e225"
+        url: "https://images.unsplash.com/photo-1525282410961-45b0a7a5e225",
+        tags: ["dj", "core", "music"]
       },
       {
         orgId: org.id,
         catalogItemId: djPro.id,
         title: "Sunset Terrace First Dance",
         type: "video",
-        url: "https://videos.pexels.com/video-files/856098/856098-hd_1280_720_30fps.mp4"
+        url: "https://videos.pexels.com/video-files/856098/856098-hd_1280_720_30fps.mp4",
+        tags: ["dj", "premium", "music"]
       },
       {
         orgId: org.id,
         catalogItemId: lightingBasic.id,
         title: "Warm Amber Package",
         type: "image",
-        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4"
+        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4",
+        tags: ["lighting", "ambience"]
       },
       {
         orgId: org.id,
         catalogItemId: lightingPro.id,
         title: "Cold Spark Reveal",
         type: "image",
-        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4"
+        url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d4",
+        tags: ["lighting", "premium"]
       }
     ]
   });

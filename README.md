@@ -50,7 +50,7 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
    ```bash
    pnpm exec prisma db seed
    ```
-   The seed script inserts an org, catalog items, assets, analytics events, and a proposal with the slide flow `INTRO → CHOICE_CORE → ADDONS → PORTFOLIO → REVIEW → ACCEPT` so you can exercise the interactive deck end-to-end.
+  The seed script inserts an org, catalog items (with portfolio tags), tagged assets, analytics events, and a proposal with the slide flow `INTRO → CHOICE_CORE → ADDONS → PORTFOLIO → REVIEW → ACCEPT` so you can exercise the interactive deck end-to-end.
 
 > **Note:** Prisma warns that the `package.json#prisma` config is deprecated. For Supabase deployment, you can move the `seed` command into a `prisma.config.ts` or Vercel build step when ready.
 
@@ -108,7 +108,7 @@ Need to pull these components into another project with the familiar registry sy
 ## Sample Flow
 1. Seed the database (`pnpm prisma db seed`).
 2. Open `http://localhost:3000/proposals/dq-demo-aurora`.
-3. Step through slides, toggle add-ons, and watch totals update.
+3. Step through slides, toggle add-ons, and watch totals update alongside the portfolio panel as it refreshes with 2–4 matched proofs.
 4. Click **Accept proposal** (status change + analytics event).
 5. Hit **Pay deposit via Stripe** to launch Checkout (requires valid keys).
 6. After acceptance, use the **Schedule kickoff demo** button to drive the Calendly hand-off.

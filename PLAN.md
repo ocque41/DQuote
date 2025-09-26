@@ -43,3 +43,19 @@
 ### Acceptance Criteria
 - [x] Totals and transient delta messaging update in sync with pricing responses.
 - [x] Interaction remains accessible/responsive on desktop and mobile breakpoints.
+
+# SPRINT 4 PLAN
+
+## Item 1: Portfolio tagging data plumbing
+- Extend catalog items and assets with shared tag metadata, expose matching assets in the proposal loader, and surface them through the pricing selections service.
+
+### Acceptance Criteria
+- [x] Catalog items and assets in the seed data include overlapping tags that can be matched at runtime.
+- [x] Server-side proposal query returns 2–4 tagged assets aligned with the active option selections for use in the portfolio panel.
+
+## Item 2: Dynamic PortfolioPanel UI
+- Introduce a portfolio panel component beneath the slide viewport that listens to selection changes and renders the server-provided assets.
+
+### Acceptance Criteria
+- [x] Portfolio panel updates immediately as core choices or add-ons are toggled.
+- [x] Matching case studies and proofs render with imagery and titles relevant to the user’s current configuration.

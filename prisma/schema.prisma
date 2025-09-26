@@ -208,6 +208,7 @@ model Asset {
   title         String?
   type          String // "image" | "video" | "link"
   url           String
+  tags          String[]
   createdAt     DateTime     @default(now())
 }
 

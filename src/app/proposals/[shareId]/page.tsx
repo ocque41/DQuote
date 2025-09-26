@@ -39,10 +39,41 @@ export default async function PublicProposalPage({ params }: ProposalPageProps) 
     notFound();
   }
 
-  const assets = await prisma.asset.findMany({
-    where: { orgId: proposal.orgId },
-    include: { catalogItem: true }
+  const selectedOptionIds = new Set(proposal.selections.map((selection) => selection.optionId));
+  const selectedTags = new Set<string>();
+  for (const slide of proposal.slides) {
+    for (const option of slide.options) {
+      if (selectedOptionIds.has(option.id)) {
+        option.catalogItem?.tags.forEach((tag) => selectedTags.add(tag));
+      }
+    }
+  }
+
+  const activeTags = Array.from(selectedTags);
+  const primaryAssets = await prisma.asset.findMany({
+    where: {
+      orgId: proposal.orgId,
+      ...(activeTags.length ? { tags: { hasSome: activeTags } } : {})
+    },
+    orderBy: { createdAt: "desc" },
+    take: 4
   });
+
+  let assets = primaryAssets;
+  if (assets.length < 2) {
+    const filler = await prisma.asset.findMany({
+      where: {
+        orgId: proposal.orgId,
+        id: { notIn: assets.map((asset) => asset.id) }
+      },
+      orderBy: { createdAt: "desc" },
+      take: Math.max(0, Math.min(4 - assets.length, Math.max(2 - assets.length, 0)))
+    });
+    assets = [...assets, ...filler];
+  }
+  if (assets.length > 4) {
+    assets = assets.slice(0, 4);
+  }
 
   return (
     <main className="mx-auto max-w-6xl space-y-12 px-4 py-10 md:px-6">
@@ -97,7 +128,7 @@ export default async function PublicProposalPage({ params }: ProposalPageProps) 
           title: asset.title,
           type: asset.type,
           url: asset.url,
-          tags: asset.catalogItem?.tags ?? []
+          tags: asset.tags ?? []
         }))}
         initialTotals={
           proposal.quote
@@ -125,7 +156,7 @@ export default async function PublicProposalPage({ params }: ProposalPageProps) 
             title: asset.title,
             type: asset.type,
             url: asset.url,
-            tags: asset.catalogItem?.tags ?? []
+            tags: asset.tags ?? []
           }))}
         />
       </section>
