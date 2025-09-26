@@ -71,6 +71,23 @@ Components are installed from the local registry at `registry/`. Two convenient 
    ```
    The script resolves JSON definitions within the local registry and runs the CLI with `CI=1` to disable spinners.
 
+Need to pull these components into another project with the familiar registry syntax (`@cumulus/button`)?
+
+3. **Serve the registry locally and consume via `@cumulus`:**
+   ```bash
+   # Terminal A: expose the registry (defaults to http://localhost:4000)
+   pnpm run registry:serve
+
+   # Terminal B: from the target project with `components.json` pointing
+   #             @cumulus -> http://localhost:4000/{name}.json
+   pnpm dlx shadcn@latest add @cumulus/button
+   ```
+   The tiny HTTP server streams JSON from `registry/`, responds to `/registry.json`
+   with an aggregated index, and enables `pnpm dlx shadcn@latest add @cumulus/<item>`
+   to succeed without the "Unknown registry" error. If your shell exports
+   `HTTP_PROXY` / `HTTPS_PROXY`, set `NO_PROXY=localhost,127.0.0.1` (and clear the
+   proxy variables) while running the command so the CLI can talk to the local server.
+
 ## Available Scripts
 - `pnpm dev` — start Next.js in development mode.
 - `pnpm build` / `pnpm start` — production build & run.
