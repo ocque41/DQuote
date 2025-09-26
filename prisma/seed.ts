@@ -143,6 +143,22 @@ async function main() {
     }
   });
 
+  await prisma.proposal.create({
+    data: {
+      orgId: org.id,
+      clientId: client.id,
+      title: "Summit Ventures Launch Night — Archived",
+      shareId: "dq-demo-expired",
+      expiresAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+      status: ProposalStatus.EXPIRED,
+      theme: {
+        primary: "#334155",
+        secondary: "#22D3EE",
+        logo: "https://dummyimage.com/160x48/334155/ffffff&text=Aurora+Archive"
+      }
+    }
+  });
+
   const [, choiceSlide, addOnSlide] = await prisma.$transaction([
     prisma.slide.create({
       data: {

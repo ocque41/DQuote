@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
@@ -23,6 +23,7 @@ import { PortfolioPanel } from "./portfolio-panel";
 import { ProgressSteps } from "./progress-steps";
 import { SummaryTray } from "./summary-tray";
 import { PortfolioAsset, ProposalRuntimeProps, RuntimeOption, RuntimeSelection, RuntimeSlide } from "./types";
+import { buildThemeTokens } from "./theme";
 
 const ACCEPTANCE_SCHEMA = z.object({
   name: z.string().min(2, "Name is required"),
@@ -90,6 +91,18 @@ function usePricing(proposalId: string, selectionMap: Record<string, number>) {
 
 export function ProposalRuntime(props: ProposalRuntimeProps) {
   const { proposalId, shareId, slides, assets, orgName, clientName, clientCompany, currency } = props;
+  const themeTokens = useMemo(() => buildThemeTokens(props.theme ?? null), [props.theme]);
+  const themeStyle = useMemo<CSSProperties>(
+    () => ({
+      "--proposal-brand": themeTokens.brandColor,
+      "--proposal-brand-surface": themeTokens.brandSurface,
+      "--proposal-brand-foreground": themeTokens.brandForeground,
+      "--proposal-accent": themeTokens.accentColor,
+      "--proposal-accent-surface": themeTokens.accentSurface,
+      "--proposal-accent-foreground": themeTokens.accentForeground,
+    }),
+    [themeTokens]
+  );
 
   const defaultSelections = useMemo(() => ({
     ...calculateDefaultSelections(slides),
@@ -203,6 +216,9 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const pricingQuery = usePricing(proposalId, selections);
   const totals = pricingQuery.data;
   const pricingError = pricingQuery.error instanceof Error ? pricingQuery.error.message : null;
+  const isPricingLoading = (pricingQuery as { isPending?: boolean }).isPending
+    ? Boolean(pricingQuery.isPending && !pricingQuery.data)
+    : pricingQuery.fetchStatus === "fetching" && !pricingQuery.data;
 
   useEffect(() => {
     if (!totals) {
@@ -512,7 +528,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const goPrevious = () => setActiveIndex((index) => Math.max(index - 1, 0));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+    <div className="grid gap-6 lg:grid-cols-[2fr,1fr]" style={themeStyle}>
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -524,7 +540,13 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
             Step {activeIndex + 1} of {slides.length}
           </span>
         </div>
-        <ProgressSteps steps={progressSteps} currentIndex={activeIndex} />
+        <ProgressSteps
+          steps={progressSteps}
+          currentIndex={activeIndex}
+          accentColor={themeTokens.accentColor}
+          accentSurface={themeTokens.accentSurface}
+          accentForeground={themeTokens.accentForeground}
+        />
 
         {activeSlide.type === "INTRO" ? (
           <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
@@ -540,6 +562,15 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
                 ))}
               </ul>
             ) : null}
+          </div>
+        ) : null}
+
+        {pricingError ? (
+          <div
+            className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+            role="alert"
+          >
+            {pricingError}
           </div>
         ) : null}
 
@@ -561,6 +592,13 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
                 onDecrement={
                   option.isAddOn ? undefined : () => adjustQuantity(option, -1)
                 }
+                theme={{
+                  brandColor: themeTokens.brandColor,
+                  brandSurface: themeTokens.brandSurface,
+                  brandForeground: themeTokens.brandForeground,
+                  accentColor: themeTokens.accentColor,
+                  accentForeground: themeTokens.accentForeground,
+                }}
               />
             ))}
           </div>
@@ -764,6 +802,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
           totals={totals ?? null}
           initialTotals={props.initialTotals ?? null}
           isSaving={isPending || acceptMutation.isPending || checkoutMutation.isPending}
+          isLoading={isPricingLoading}
           delta={summaryDelta ? { label: summaryDelta.label, amount: summaryDelta.amount } : null}
           errorMessage={pricingError}
           deposit={quoteState.deposit}

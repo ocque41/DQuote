@@ -33,10 +33,12 @@ An admin analytics view is available at `/admin/analytics`, summarising slide co
 ### Environment Variables
 `.env.example` documents the required configuration:
 - `DATABASE_URL` / `DIRECT_URL`: Supabase Postgres connection strings.
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`: Helpful when wiring Supabase Auth or Row Level Security policies alongside Prisma.
 - `NEXT_PUBLIC_APP_URL`: Base URL for success/cancel redirects.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
-- `ENCRYPTION_KEY`: Reserved for future secure payload handling (32 chars).
 - `DEMO_PROPOSAL_SHARE_ID` (optional): Overrides the proposal used by the analytics dashboard (`dq-demo-aurora` by default).
+- `PDF_STORAGE_BUCKET` (optional): Target folder/S3 key prefix for generated receipt PDFs when deploying beyond local disk.
+- `ENCRYPTION_KEY`: Reserved for future secure payload handling (32 chars).
 
 ## Database & Prisma Workflow
 1. **Generate SQL migration (manual review first):**
@@ -71,6 +73,12 @@ An admin analytics view is available at `/admin/analytics`, summarising slide co
 - `/proposals/[shareId]/receipt` renders a printable recap (totals, selections, acceptance metadata) for the active quote.
 - The acceptance handler uses Puppeteer to load that page and write the PDF under `public/receipts/` (configurable via `PUPPETEER_EXECUTABLE_PATH` if you bundle Chromium separately).
 - The resulting `pdfUrl` is stored on the quote and surfaced to the proposal runtime so clients can download the receipt immediately after acceptance.
+
+## Error Handling & Accessibility
+- Proposal themes feed CSS variables into the runtime so the seeded demo renders a branded hero, colored progress indicator, and accented option cards.
+- Pricing/network failures are caught client-side and surfaced inline without crashing the slide flow; the summary tray shows skeleton placeholders while new totals load.
+- Option toggles and steppers now expose `aria` attributes, keyboard-friendly controls, and visible focus states to meet baseline accessibility expectations.
+- Expired share links return a guarded state instead of rendering the runtime, keeping archived proposals private while guiding prospects back to the sales team.
 
 ## shadcn/ui with Custom Registry
 Components are installed from the local registry at `registry/`. Two convenient options:
@@ -113,16 +121,17 @@ Need to pull these components into another project with the familiar registry sy
 - `pnpm run migrate:apply` — apply migrations to the configured database.
 - `pnpm prisma db seed` — run the demo seed script via `tsx`.
 
-## Sample Flow
+## Demo Script
 1. Seed the database (`pnpm prisma db seed`).
-2. Open `http://localhost:3000/proposals/dq-demo-aurora`.
+2. Visit `http://localhost:3000/proposals/dq-demo-aurora` to confirm the branded hero (logo + theme colors) renders above the interactive deck.
 3. Step through slides, toggle add-ons, and watch totals update alongside the portfolio panel as it refreshes with 2–4 matched proofs.
-4. On the **Review** step, capture the acceptor name and email to prep the signature record.
-5. Move to **Accept** and click **Accept proposal** to store the signature metadata and compute the 20 % deposit.
-6. Hit **Pay deposit via Stripe** to launch Checkout (requires valid test keys); returning with `session_id` marks the quote as paid and updates the runtime badge.
-7. Download the PDF receipt from the success panel and share it with the client if needed.
-8. Use the **Schedule kickoff demo** button to drive the Calendly hand-off.
-9. Visit `/admin/analytics` to review per-slide completion, dwell time, and event totals captured during the run-through.
+4. Intentionally disconnect your network (or use DevTools throttling) when toggling an option to surface the inline pricing error state, then restore connectivity to verify recovery.
+5. On the **Review** step, capture the acceptor name and email to prep the signature record.
+6. Move to **Accept** and click **Accept proposal** to store the signature metadata and compute the 20 % deposit.
+7. Hit **Pay deposit via Stripe** to launch Checkout (requires valid test keys); returning with `session_id` marks the quote as paid and updates the runtime badge.
+8. Download the PDF receipt from the success panel and share it with the client if needed, then trigger the **Schedule kickoff demo** CTA.
+9. Visit `http://localhost:3000/proposals/dq-demo-expired` to confirm expired share links render the appropriate messaging without exposing the runtime.
+10. Finish at `/admin/analytics` to review per-slide completion, dwell time, and event totals captured during the run-through.
 
 ## Analytics & Event Tracking
 - The proposal runtime logs lifecycle events (`VIEW`, `SELECT`, `DESELECT`, `PORTFOLIO_OPEN`) using server actions so admins can reconstruct viewer funnels.

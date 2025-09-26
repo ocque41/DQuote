@@ -64,5 +64,12 @@ export type ProposalRuntimeProps = {
     acceptedByEmail?: string | null;
     pdfUrl?: string | null;
   } | null;
-  theme?: Record<string, unknown> | null;
+  theme?: ProposalTheme | null;
+};
+
+export type ProposalTheme = {
+  primary?: string | null;
+  secondary?: string | null;
+  logo?: string | null;
+  background?: string | null;
 };

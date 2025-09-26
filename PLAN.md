@@ -115,3 +115,33 @@
 - [x] Admin analytics view renders aggregate counts and completion percentages for each slide of the demo proposal without runtime errors.
 - [x] Dashboard surfaces average time on step derived from event timestamps for completed slide views.
 
+# SPRINT 8 PLAN
+
+## Item 1: Proposal theming & branding
+- Introduce theme fields on `Proposal` to drive logo/brand colors and render a branded header in the runtime.
+
+### Acceptance Criteria
+- [x] Proposal records can store logo URL and brand color tokens consumed by the runtime layout.
+- [x] Visiting the demo proposal renders the branded header and themed accents using the stored configuration.
+
+## Item 2: Share link expiration & access polish
+- Support optional `expiresAt` timestamps on share links with expired-state handling in the proposal route.
+
+### Acceptance Criteria
+- [x] Loading an expired share link surfaces an “Link expired” message while blocking runtime interaction.
+- [x] Valid share links continue to render normally, and seed data covers both scenarios for verification.
+
+## Item 3: Error handling, skeletons, and accessibility
+- Add resilient UI states for pricing/network failures, loading skeletons, and keyboard/a11y improvements for controls.
+
+### Acceptance Criteria
+- [x] Pricing failures and network errors display actionable inline feedback without crashing the runtime.
+- [x] Core controls (options, toggles, steppers) meet keyboard focus expectations and have visible skeletons during initial load.
+
+## Item 4: Documentation & environment updates
+- Finalize README instructions, `.env.example`, and deployment notes covering Supabase, Stripe webhooks, and PDF storage follow-ups.
+
+### Acceptance Criteria
+- [x] README enumerates final setup/run commands, environment variables, and notes on Stripe webhooks/Supabase usage.
+- [x] `.env.example` contains placeholders for all required secrets and optional configs referenced in documentation.
+

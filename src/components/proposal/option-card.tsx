@@ -19,9 +19,26 @@ type OptionCardProps = {
   onIncrement?: () => void;
   onDecrement?: () => void;
   footer?: ReactNode;
+  theme?: {
+    brandColor: string;
+    brandSurface: string;
+    brandForeground: string;
+    accentColor: string;
+    accentForeground: string;
+  };
 };
 
-export function OptionCard({ option, currency, quantity, onSelect, onToggle, onIncrement, onDecrement, footer }: OptionCardProps) {
+export function OptionCard({
+  option,
+  currency,
+  quantity,
+  onSelect,
+  onToggle,
+  onIncrement,
+  onDecrement,
+  footer,
+  theme,
+}: OptionCardProps) {
   const price = option.priceOverride ?? option.catalogItem?.unitPrice ?? 0;
   const isSelected = quantity > 0;
   const tags = option.catalogItem?.tags ?? [];
@@ -29,13 +46,16 @@ export function OptionCard({ option, currency, quantity, onSelect, onToggle, onI
   const maxQty = option.maxQty ?? 5;
   const displayName = option.catalogItem?.name ?? option.description ?? "Custom option";
   const description = option.catalogItem?.description ?? option.description;
+  const cardStyle = isSelected && theme ? { borderColor: theme.brandColor, backgroundColor: theme.brandSurface } : undefined;
 
   return (
     <Card
       className={cn(
-        "relative flex h-full flex-col justify-between border-2 transition",
-        isSelected ? "border-primary bg-primary/5" : "border-border"
+        "relative flex h-full flex-col justify-between border-2 transition focus-within:ring-2",
+        isSelected ? "border-transparent" : "border-border"
       )}
+      tabIndex={-1}
+      style={cardStyle}
     >
       <CardHeader>
         <CardTitle>{displayName}</CardTitle>
@@ -44,10 +64,28 @@ export function OptionCard({ option, currency, quantity, onSelect, onToggle, onI
       <CardContent className="space-y-4">
         <p className="text-lg font-semibold">{formatCurrency(Number(price), currency)}</p>
         {option.isAddOn && onToggle ? (
-          <AddOnToggle selected={isSelected} onToggle={onToggle} />
+          <AddOnToggle
+            selected={isSelected}
+            onToggle={onToggle}
+            accentColor={theme?.accentColor}
+            accentForeground={theme?.accentForeground}
+          />
         ) : null}
         {!option.isAddOn && onSelect ? (
-          <Button className="w-full" onClick={onSelect} variant={isSelected ? "default" : "outline"}>
+          <Button
+            className="w-full"
+            onClick={onSelect}
+            variant={isSelected ? "default" : "outline"}
+            style={
+              isSelected
+                ? {
+                    backgroundColor: theme?.brandColor,
+                    color: theme?.brandForeground,
+                  }
+                : undefined
+            }
+            aria-pressed={isSelected}
+          >
             {isSelected ? "Selected" : "Choose"}
           </Button>
         ) : null}
@@ -59,6 +97,7 @@ export function OptionCard({ option, currency, quantity, onSelect, onToggle, onI
             onIncrement={onIncrement}
             onDecrement={onDecrement}
             className="ml-auto"
+            ariaLabel={`${displayName} quantity`}
           />
         ) : null}
         {!option.isAddOn && tags.length ? (
@@ -71,7 +110,13 @@ export function OptionCard({ option, currency, quantity, onSelect, onToggle, onI
         {footer}
       </CardContent>
       {option.isDefault ? (
-        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground">
+        <span
+          className="absolute right-3 top-3 flex items-center gap-1 rounded-full px-2 py-1 text-xs"
+          style={{
+            backgroundColor: theme?.accentColor,
+            color: theme?.accentForeground,
+          }}
+        >
           <Check className="h-3 w-3" /> Recommended
         </span>
       ) : null}

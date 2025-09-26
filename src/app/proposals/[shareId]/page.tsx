@@ -1,10 +1,13 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Stripe from "stripe";
+import Image from "next/image";
+import type { CSSProperties } from "react";
 
 import { EventType } from "@prisma/client";
 
 import { ProposalRuntime } from "@/components/proposal/proposal-runtime";
+import { coerceProposalTheme, buildThemeTokens } from "@/components/proposal/theme";
 import { PortfolioGrid } from "./portfolio";
 import { prisma } from "@/server/prisma";
 
@@ -47,6 +50,21 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
   if (!proposal) {
     notFound();
   }
+
+  const theme = coerceProposalTheme(proposal.theme);
+  const themeTokens = buildThemeTokens(theme);
+  const themeStyle: CSSProperties = {
+    "--proposal-brand": themeTokens.brandColor,
+    "--proposal-brand-surface": themeTokens.brandSurface,
+    "--proposal-brand-foreground": themeTokens.brandForeground,
+    "--proposal-accent": themeTokens.accentColor,
+    "--proposal-accent-surface": themeTokens.accentSurface,
+    "--proposal-accent-foreground": themeTokens.accentForeground,
+  } as Record<string, string>;
+  const isExpired = proposal.expiresAt ? proposal.expiresAt.getTime() < Date.now() : false;
+  const formattedExpiry = proposal.expiresAt
+    ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(proposal.expiresAt)
+    : null;
 
   if (sessionId && process.env.STRIPE_SECRET_KEY && proposal.quote) {
     try {
@@ -98,6 +116,60 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
     }
   }
 
+  if (isExpired) {
+    return (
+      <main className="mx-auto max-w-4xl space-y-12 px-4 py-10 md:px-6" style={themeStyle}>
+        <header
+          className="overflow-hidden rounded-3xl border p-6 text-center shadow-sm md:text-left"
+          style={{ backgroundColor: themeTokens.brandSurface, color: themeTokens.brandForeground }}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col items-center gap-3 md:items-start">
+              {themeTokens.logo ? (
+                <span className="inline-flex items-center justify-center rounded-xl bg-white/70 p-2 shadow-sm">
+                  <Image
+                    src={themeTokens.logo}
+                    alt={`${proposal.org.name} logo`}
+                    width={200}
+                    height={48}
+                    className="h-10 w-auto max-w-[200px] object-contain"
+                    sizes="(max-width: 768px) 160px, 200px"
+                    priority
+                  />
+                </span>
+              ) : null}
+              <div className="space-y-1 text-center md:text-left">
+                <p className="text-xs uppercase tracking-wide opacity-80">Presented by {proposal.org.name}</p>
+                <h1 className="text-3xl font-semibold md:text-4xl">{proposal.title}</h1>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-2 md:items-end">
+              <span
+                className="rounded-full border px-4 py-2 text-xs font-medium uppercase tracking-wide"
+                style={{
+                  backgroundColor: themeTokens.accentSurface,
+                  color: themeTokens.accentForeground,
+                  borderColor: themeTokens.accentColor,
+                }}
+              >
+                Link expired
+              </span>
+              <span className="text-xs opacity-80">Share ID: {proposal.shareId}</span>
+            </div>
+          </div>
+        </header>
+
+        <section className="rounded-2xl border border-dashed bg-muted/40 p-8 text-center">
+          <h2 className="text-2xl font-semibold">This proposal link has expired</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {formattedExpiry ? `It expired on ${formattedExpiry}.` : ""} Please contact {proposal.org.name} to request a fresh
+            quote or updated proposal.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   const selectedOptionIds = new Set(proposal.selections.map((selection) => selection.optionId));
   const selectedTags = new Set<string>();
   for (const slide of proposal.slides) {
@@ -135,14 +207,52 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-12 px-4 py-10 md:px-6">
-      <header className="space-y-4 text-center">
-        <p className="text-sm uppercase tracking-wide text-muted-foreground">{proposal.org.name}</p>
-        <h1 className="text-3xl font-semibold md:text-4xl">{proposal.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          Prepared for {proposal.client.name}
-          {proposal.client.company ? ` · ${proposal.client.company}` : ""}
-        </p>
+    <main className="mx-auto max-w-6xl space-y-12 px-4 py-10 md:px-6" style={themeStyle}>
+      <header
+        className="overflow-hidden rounded-3xl border p-6 shadow-sm"
+        style={{ backgroundColor: themeTokens.brandSurface, color: themeTokens.brandForeground }}
+      >
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            {themeTokens.logo ? (
+              <span className="inline-flex items-center justify-center rounded-2xl bg-white/80 p-3 shadow-sm">
+                <Image
+                  src={themeTokens.logo}
+                  alt={`${proposal.org.name} logo`}
+                  width={220}
+                  height={60}
+                  className="h-12 w-auto max-w-[220px] object-contain"
+                  sizes="(max-width: 768px) 180px, 220px"
+                  priority
+                />
+              </span>
+            ) : null}
+            <div className="space-y-2 text-center md:text-left">
+              <p className="text-xs uppercase tracking-wide opacity-80">Presented by {proposal.org.name}</p>
+              <h1 className="text-3xl font-semibold md:text-4xl">{proposal.title}</h1>
+              <p className="text-sm opacity-80">
+                Prepared for {proposal.client.name}
+                {proposal.client.company ? ` · ${proposal.client.company}` : ""}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-2 md:items-end">
+            <span
+              className="rounded-full border px-4 py-2 text-xs font-medium uppercase tracking-wide"
+              style={{
+                backgroundColor: themeTokens.accentSurface,
+                color: themeTokens.accentForeground,
+                borderColor: themeTokens.accentColor,
+              }}
+            >
+              Interactive proposal
+            </span>
+            <span className="text-xs opacity-80">Share ID: {proposal.shareId}</span>
+            {formattedExpiry ? (
+              <span className="text-xs opacity-80">Link expires {formattedExpiry}</span>
+            ) : null}
+          </div>
+        </div>
       </header>
 
       <ProposalRuntime
@@ -212,7 +322,7 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
               }
             : null
         }
-        theme={proposal.theme as Record<string, unknown> | null}
+        theme={theme}
       />
 
       <section className="space-y-4">
