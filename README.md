@@ -64,6 +64,11 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 - Create a webhook endpoint pointing to `/api/stripe/webhook` (future enhancement) and store the signing secret in `STRIPE_WEBHOOK_SECRET`.
 - After acceptance the `/api/stripe/checkout` handler launches a deposit-only Checkout Session (line item name `DQuote Deposit — <proposal title>`) using the stored quote totals, so the client only needs to provide the `shareId`.
 
+## PDF Receipts
+- `/proposals/[shareId]/receipt` renders a printable recap (totals, selections, acceptance metadata) for the active quote.
+- The acceptance handler uses Puppeteer to load that page and write the PDF under `public/receipts/` (configurable via `PUPPETEER_EXECUTABLE_PATH` if you bundle Chromium separately).
+- The resulting `pdfUrl` is stored on the quote and surfaced to the proposal runtime so clients can download the receipt immediately after acceptance.
+
 ## shadcn/ui with Custom Registry
 Components are installed from the local registry at `registry/`. Two convenient options:
 
@@ -112,7 +117,8 @@ Need to pull these components into another project with the familiar registry sy
 4. On the **Review** step, capture the acceptor name and email to prep the signature record.
 5. Move to **Accept** and click **Accept proposal** to store the signature metadata and compute the 20 % deposit.
 6. Hit **Pay deposit via Stripe** to launch Checkout (requires valid test keys); returning with `session_id` marks the quote as paid and updates the runtime badge.
-7. Use the **Schedule kickoff demo** button to drive the Calendly hand-off.
+7. Download the PDF receipt from the success panel and share it with the client if needed.
+8. Use the **Schedule kickoff demo** button to drive the Calendly hand-off.
 
 ## Project Structure Highlights
 ```
@@ -128,7 +134,7 @@ registry/                # Custom shadcn registry items
 ## API Endpoints
 - `POST /api/pricing` — calculate subtotal, tax, and total for a proposal based on the provided selections.
   - Responds with `400` when selections violate require/mutex rules and includes a `violations` array for context.
-- `POST /api/accept` — validate the acceptor details, persist signature metadata (UUID, timestamp, IP/UA), and respond with the computed 20 % deposit amount.
+- `POST /api/accept` — validate the acceptor details, persist signature metadata (UUID, timestamp, IP/UA), generate the receipt PDF, and respond with the computed 20 % deposit amount plus the `pdfUrl`.
 - `POST /api/stripe/checkout` — create a Stripe Checkout Session for the stored deposit, persist the session/payment IDs, and return the hosted payment URL.
 
 ## Testing & Quality
@@ -141,4 +147,4 @@ registry/                # Custom shadcn registry items
 - Plug in Supabase auth & multi-org permissions.
 - Implement Stripe webhook handler to mark invoices paid.
 - Expand pricing rules to support stacked promotions and time-bound incentives.
-- Export proposals as PDF via headless Chromium for offline review.
+- Email the generated PDF receipt to the acceptor as part of a confirmation workflow.

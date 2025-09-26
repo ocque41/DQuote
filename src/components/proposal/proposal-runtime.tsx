@@ -120,12 +120,14 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const [quoteState, setQuoteState] = useState({
     deposit: props.initialTotals?.deposit ?? null,
     depositPaidAt: props.quoteStatus?.depositPaidAt ?? null,
-    signatureId: props.quoteStatus?.signatureId ?? null
+    signatureId: props.quoteStatus?.signatureId ?? null,
+    pdfUrl: props.quoteStatus?.pdfUrl ?? null
   });
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const isAccepted = Boolean(quoteState.signatureId);
   const depositPaid = Boolean(quoteState.depositPaidAt);
+  const receiptUrl = quoteState.pdfUrl ?? null;
 
   useEffect(() => {
     startTransition(() => updateSelectionsAction({ shareId, selections: selectionsToArray(selections) }));
@@ -315,7 +317,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   };
 
   const acceptMutation = useMutation<
-    { deposit?: number | null; signatureId?: string | null },
+    { deposit?: number | null; signatureId?: string | null; pdfUrl?: string | null },
     Error,
     AcceptanceFormValues
   >({
@@ -348,7 +350,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
         throw new Error(message);
       }
       await logEventAction({ shareId, type: "ACCEPT", data: { signatureId: (json as { signatureId?: string })?.signatureId } });
-      return (json ?? {}) as { deposit?: number | null; signatureId?: string | null };
+      return (json ?? {}) as { deposit?: number | null; signatureId?: string | null; pdfUrl?: string | null };
     },
     onMutate: () => {
       setAcceptError(null);
@@ -357,7 +359,8 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
       setQuoteState((prev) => ({
         deposit: typeof data.deposit === "number" ? data.deposit : prev.deposit,
         depositPaidAt: prev.depositPaidAt,
-        signatureId: data.signatureId ?? prev.signatureId ?? null
+        signatureId: data.signatureId ?? prev.signatureId ?? null,
+        pdfUrl: data.pdfUrl ?? prev.pdfUrl
       }));
       if (acceptSlideIndex >= 0) {
         setActiveIndex(acceptSlideIndex);
@@ -628,6 +631,13 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
                 {checkoutMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {depositPaid ? "Deposit complete" : "Pay deposit via Stripe"}
               </Button>
+              {receiptUrl ? (
+                <Button asChild className="w-full sm:w-auto" variant="secondary">
+                  <a href={receiptUrl} target="_blank" rel="noreferrer" download>
+                    Download PDF receipt
+                  </a>
+                </Button>
+              ) : null}
             </div>
             {checkoutError ? <p className="text-sm text-destructive">{checkoutError}</p> : null}
             <Button asChild variant="ghost" className="w-full sm:w-auto">

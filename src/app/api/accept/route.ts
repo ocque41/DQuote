@@ -4,6 +4,7 @@ import { z } from "zod";
 import { EventType, Prisma, ProposalStatus } from "@prisma/client";
 
 import { prisma } from "@/server/prisma";
+import { generateQuotePdf } from "@/server/pdf/quote";
 
 const BodySchema = z.object({
   shareId: z.string(),
@@ -65,8 +66,27 @@ export async function POST(req: Request) {
     })
   ]);
 
+  let pdfUrl: string | null = null;
+  const origin = new URL(req.url).origin;
+
+  try {
+    const result = await generateQuotePdf({
+      shareId: parsed.data.shareId,
+      quoteId: proposal.quote.id,
+      baseUrl: origin
+    });
+    pdfUrl = result.pdfUrl;
+    await prisma.quote.update({
+      where: { id: proposal.quote.id },
+      data: { pdfUrl }
+    });
+  } catch (error) {
+    console.error("Failed to generate proposal PDF", error);
+  }
+
   return NextResponse.json({
     deposit: computedDeposit,
-    signatureId
+    signatureId,
+    pdfUrl
   });
 }

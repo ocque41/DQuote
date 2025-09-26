@@ -62,6 +62,7 @@ export type ProposalRuntimeProps = {
     depositPaidAt?: string | null;
     acceptedByName?: string | null;
     acceptedByEmail?: string | null;
+    pdfUrl?: string | null;
   } | null;
   theme?: Record<string, unknown> | null;
 };

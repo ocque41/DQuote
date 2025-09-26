@@ -186,7 +186,8 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
                   ? proposal.quote.depositPaidAt.toISOString()
                   : null,
                 acceptedByName: proposal.quote.acceptedByName,
-                acceptedByEmail: proposal.quote.acceptedByEmail
+                acceptedByEmail: proposal.quote.acceptedByEmail,
+                pdfUrl: proposal.quote.pdfUrl
               }
             : null
         }

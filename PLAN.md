@@ -82,3 +82,19 @@
 ### Acceptance Criteria
 - [x] Calling the endpoint creates a checkout session with the quote’s deposit amount and returns the hosted URL.
 - [x] On successful payment the proposal runtime shows a “Deposit paid” indicator sourced from stored Stripe session results.
+
+# SPRINT 6 PLAN
+
+## Item 1: Printable receipt surface
+- Add a server-rendered `/proposals/[shareId]/receipt` page that summarizes totals, selections, and acceptance metadata for PDF export.
+
+### Acceptance Criteria
+- [x] Navigating to `/proposals/<shareId>/receipt` renders a printable recap sourced from Prisma without runtime errors.
+- [x] The receipt view presents totals, itemized selections, and acceptance contact details for the accepted quote.
+
+## Item 2: PDF generation + download handoff
+- Introduce a Puppeteer-based generator in `src/server/pdf/quote.ts` and wire acceptance to store and surface the generated PDF URL.
+
+### Acceptance Criteria
+- [x] Accepting a proposal produces a PDF file persisted to disk (or storage) and saves its URL on the quote record.
+- [x] The proposal runtime exposes a “Download PDF” control once acceptance completes, returning the stored PDF.
