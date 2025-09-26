@@ -1,15 +1,15 @@
-# SPRINT 4 PLAN
+# SPRINT 0 PLAN
 
-## Item 1: Configure shadcn registry for @cumulus components
-- Ensure the project knows how to resolve the `@cumulus` registry so component downloads succeed locally.
-
-### Acceptance Criteria
-- [x] `components.json` includes a `registries` entry pointing `@cumulus` to the project's registry endpoint.
-- [x] Verified the registry by fetching `@cumulus/button` JSON from the local server (documented that the CLI requires `NO_PROXY` for localhost).
-
-## Item 2: Document how to use the custom registry
-- Add contributor guidance describing the custom registry configuration and the command needed to pull components.
+## Item 1: Baseline Next.js + shadcn scaffold verification
+- Confirm the repo already satisfies the baseline scaffold (Next.js App Router with Tailwind and shadcn integration) and note any fixes if missing.
 
 ### Acceptance Criteria
-- [x] README notes the `@cumulus` registry URL and example `shadcn add` usage.
-- [x] `pnpm lint` passes after documentation updates.
+- [x] `src/app` structure exists with an index route rendering without runtime errors.
+- [x] `pnpm dev` boots cleanly (no type errors) and the home page renders a placeholder view.
+
+## Item 2: Dependency baseline and documentation
+- Ensure required dependencies (zod, React Hook Form, Prisma, Stripe, Puppeteer, TanStack Query) are present and document the verification steps in README.
+
+### Acceptance Criteria
+- [x] `package.json` lists all required libraries with compatible versions.
+- [x] README includes up-to-date instructions to install dependencies and run the dev server.

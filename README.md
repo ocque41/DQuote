@@ -12,6 +12,14 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 
 > **Binary assets policy:** The project intentionally ships without binary image assets (including the default Next.js favicon) so that pull requests remain compatible with the “no binary files” guardrail in our workflow. When you scaffold new features, replace media with text-based placeholders (SVG-as-text, data URIs, etc.) or host assets externally.
 
+## Baseline Dependencies
+The project already includes the core libraries required for Sprint 0. Key packages to verify after running `pnpm install`:
+- `zod`, `react-hook-form`, and `@hookform/resolvers` for form validation.
+- `@tanstack/react-query` and `@tanstack/react-query-devtools` for client data fetching.
+- `prisma` and `@prisma/client` for database access.
+- `stripe` and `@stripe/stripe-js` for payments.
+- `puppeteer` for PDF generation.
+
 ## Getting Started
 ```bash
 pnpm install
