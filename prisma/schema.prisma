@@ -195,7 +195,14 @@ model Quote {
   deposit     Decimal? @db.Decimal(12, 2)
   pdfUrl      String?
   signatureId String?
-  stripeId    String?
+  acceptedAt        DateTime?
+  acceptedByName    String?
+  acceptedByEmail   String?
+  acceptedIp        String?
+  acceptedUserAgent String?
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  depositPaidAt           DateTime?
   createdAt   DateTime @default(now())
 }
 

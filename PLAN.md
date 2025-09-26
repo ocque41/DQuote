@@ -59,3 +59,26 @@
 ### Acceptance Criteria
 - [x] Portfolio panel updates immediately as core choices or add-ons are toggled.
 - [x] Matching case studies and proofs render with imagery and titles relevant to the user’s current configuration.
+
+# SPRINT 5 PLAN
+
+## Item 1: Review slide acceptance UX
+- Enhance the REVIEW step to show the final itemized breakdown and collect acceptor name/email prior to submission.
+
+### Acceptance Criteria
+- [x] Review slide lists all selected items with quantities, subtotals, tax, and total matching the summary tray.
+- [x] Submission requires acceptor name and email with validation feedback on missing/invalid values.
+
+## Item 2: Acceptance capture service
+- Implement the `/api/accept` route to validate payloads, persist acceptance metadata on the quote, and return the computed deposit share.
+
+### Acceptance Criteria
+- [x] Accepted payload generates a signature UUID, timestamps, IP, and user-agent stored on the associated quote record.
+- [x] Response returns a deterministic deposit amount (e.g., 20% of total) derived on the server.
+
+## Item 3: Stripe deposit checkout
+- Add a `/api/stripe/checkout` route that launches a Stripe Checkout Session for the deposit and reflects successful payments in the proposal runtime.
+
+### Acceptance Criteria
+- [x] Calling the endpoint creates a checkout session with the quote’s deposit amount and returns the hosted URL.
+- [x] On successful payment the proposal runtime shows a “Deposit paid” indicator sourced from stored Stripe session results.

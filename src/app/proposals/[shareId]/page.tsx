@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Stripe from "stripe";
 
 import { ProposalRuntime } from "@/components/proposal/proposal-runtime";
 import { PortfolioGrid } from "./portfolio";
@@ -7,6 +8,7 @@ import { prisma } from "@/server/prisma";
 
 interface ProposalPageProps {
   params: Promise<{ shareId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export const metadata: Metadata = {
@@ -14,29 +16,65 @@ export const metadata: Metadata = {
   description: "Interactive proposal runtime"
 };
 
-export default async function PublicProposalPage({ params }: ProposalPageProps) {
+export default async function PublicProposalPage({ params, searchParams }: ProposalPageProps) {
   const { shareId } = await params;
+  const query = (await searchParams) ?? {};
+  const rawSession = query.session_id;
+  const sessionId = Array.isArray(rawSession) ? rawSession[0] : rawSession;
 
-  const proposal = await prisma.proposal.findUnique({
-    where: { shareId },
-    include: {
-      org: true,
-      client: true,
-      quote: true,
-      selections: true,
-      slides: {
-        orderBy: { position: "asc" },
-        include: {
-          options: {
-            include: { catalogItem: true }
-          }
+  const proposalInclude = {
+    org: true,
+    client: true,
+    quote: true,
+    selections: true,
+    slides: {
+      orderBy: { position: "asc" },
+      include: {
+        options: {
+          include: { catalogItem: true }
         }
       }
     }
+  } as const;
+
+  let proposal = await prisma.proposal.findUnique({
+    where: { shareId },
+    include: proposalInclude
   });
 
   if (!proposal) {
     notFound();
+  }
+
+  if (sessionId && process.env.STRIPE_SECRET_KEY && proposal.quote) {
+    try {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["payment_intent"]
+      });
+      if (session.payment_status === "paid") {
+        const paymentIntentId =
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : session.payment_intent?.id ?? null;
+        await prisma.quote.update({
+          where: { id: proposal.quote.id },
+          data: {
+            stripeCheckoutSessionId: session.id,
+            stripePaymentIntentId: paymentIntentId,
+            depositPaidAt:
+              proposal.quote.depositPaidAt ?? new Date((session.created ?? Date.now() / 1000) * 1000)
+          }
+        });
+        proposal =
+          (await prisma.proposal.findUnique({
+            where: { shareId },
+            include: proposalInclude
+          })) ?? proposal;
+      }
+    } catch {
+      // ignore Stripe retrieval issues – proposal will render without payment acknowledgement
+    }
   }
 
   const selectedOptionIds = new Set(proposal.selections.map((selection) => selection.optionId));
@@ -137,6 +175,18 @@ export default async function PublicProposalPage({ params }: ProposalPageProps) 
                 tax: Number(proposal.quote.tax),
                 total: Number(proposal.quote.total),
                 deposit: proposal.quote.deposit ? Number(proposal.quote.deposit) : null
+              }
+            : null
+        }
+        quoteStatus={
+          proposal.quote
+            ? {
+                signatureId: proposal.quote.signatureId,
+                depositPaidAt: proposal.quote.depositPaidAt
+                  ? proposal.quote.depositPaidAt.toISOString()
+                  : null,
+                acceptedByName: proposal.quote.acceptedByName,
+                acceptedByEmail: proposal.quote.acceptedByEmail
               }
             : null
         }

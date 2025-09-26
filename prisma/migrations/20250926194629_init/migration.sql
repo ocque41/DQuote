@@ -163,7 +163,14 @@ CREATE TABLE "public"."Quote" (
     "deposit" DECIMAL(12,2),
     "pdfUrl" TEXT,
     "signatureId" TEXT,
-    "stripeId" TEXT,
+    "acceptedAt" TIMESTAMP(3),
+    "acceptedByName" TEXT,
+    "acceptedByEmail" TEXT,
+    "acceptedIp" TEXT,
+    "acceptedUserAgent" TEXT,
+    "stripeCheckoutSessionId" TEXT,
+    "stripePaymentIntentId" TEXT,
+    "depositPaidAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Quote_pkey" PRIMARY KEY ("id")

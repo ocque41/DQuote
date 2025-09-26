@@ -2,10 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/currency";
 import { PortfolioGrid } from "@/app/proposals/[shareId]/portfolio";
 import { logEventAction, updateSelectionsAction } from "@/app/proposals/[shareId]/actions";
@@ -15,6 +21,15 @@ import { PortfolioPanel } from "./portfolio-panel";
 import { ProgressSteps } from "./progress-steps";
 import { SummaryTray } from "./summary-tray";
 import { PortfolioAsset, ProposalRuntimeProps, RuntimeOption, RuntimeSelection, RuntimeSlide } from "./types";
+
+const ACCEPTANCE_SCHEMA = z.object({
+  name: z.string().min(2, "Name is required"),
+  email: z.string().email("Enter a valid email")
+});
+
+type AcceptanceFormValues = z.infer<typeof ACCEPTANCE_SCHEMA>;
+
+const DEFAULT_DEPOSIT_RATE = 0.2;
 
 function calculateDefaultSelections(slides: RuntimeSlide[]): Record<string, number> {
   const next: Record<string, number> = {};
@@ -94,6 +109,23 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   );
   const pendingChangeRef = useRef<{ label: string } | null>(null);
   const [summaryDelta, setSummaryDelta] = useState<{ label: string; amount: number; expiresAt: number } | null>(null);
+  const acceptanceForm = useForm<AcceptanceFormValues>({
+    resolver: zodResolver(ACCEPTANCE_SCHEMA),
+    mode: "onChange",
+    defaultValues: {
+      name: props.quoteStatus?.acceptedByName ?? "",
+      email: props.quoteStatus?.acceptedByEmail ?? ""
+    }
+  });
+  const [quoteState, setQuoteState] = useState({
+    deposit: props.initialTotals?.deposit ?? null,
+    depositPaidAt: props.quoteStatus?.depositPaidAt ?? null,
+    signatureId: props.quoteStatus?.signatureId ?? null
+  });
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const isAccepted = Boolean(quoteState.signatureId);
+  const depositPaid = Boolean(quoteState.depositPaidAt);
 
   useEffect(() => {
     startTransition(() => updateSelectionsAction({ shareId, selections: selectionsToArray(selections) }));
@@ -179,6 +211,25 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     const filler = assets.filter((asset) => !base.some((item) => item.id === asset.id));
     return [...base, ...filler].slice(0, Math.min(4, assets.length));
   }, [assets, selectionTags]);
+  const selectedOptionDetails = useMemo(() => {
+    return slides
+      .flatMap((slide) => slide.options)
+      .filter((option) => (selections[option.id] ?? 0) > 0)
+      .map((option) => {
+        const qty = selections[option.id] ?? 0;
+        const unitPrice = Number(option.priceOverride ?? option.catalogItem?.unitPrice ?? 0);
+        return {
+          option,
+          qty,
+          unitPrice,
+          lineTotal: unitPrice * qty
+        };
+      });
+  }, [slides, selections]);
+  const currentTotals = totals ?? props.initialTotals ?? { subtotal: 0, tax: 0, total: 0 };
+  const estimatedDeposit = quoteState.deposit ??
+    (currentTotals.total ? Math.round(currentTotals.total * DEFAULT_DEPOSIT_RATE * 100) / 100 : null);
+  const depositDisplay = quoteState.deposit ?? estimatedDeposit;
 
   const activeSlide = slides[activeIndex];
   const introMeta =
@@ -190,6 +241,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     ? (introMeta.agenda as unknown[]).filter((item): item is string => typeof item === "string")
     : [];
   const isChoiceSlide = activeSlide?.type === "CHOICE_CORE" || activeSlide?.type === "ADDONS";
+  const acceptSlideIndex = slides.findIndex((slide) => slide.type === "ACCEPT");
   const progressSteps = useMemo(
     () =>
       slides.map((slide) => ({
@@ -262,56 +314,98 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     });
   };
 
-  const acceptMutation = useMutation({
-    mutationFn: async () => {
+  const acceptMutation = useMutation<
+    { deposit?: number | null; signatureId?: string | null },
+    Error,
+    AcceptanceFormValues
+  >({
+    mutationFn: async (values) => {
       const res = await fetch("/api/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shareId, name: values.name, email: values.email })
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        let message = "Failed to accept proposal";
+        const errorPayload = json as {
+          error?:
+            | string
+            | {
+                formErrors?: string[];
+                fieldErrors?: Record<string, string[]>;
+              };
+        } | null;
+        if (errorPayload?.error) {
+          if (typeof errorPayload.error === "string") {
+            message = errorPayload.error;
+          } else {
+            const fieldErrors = errorPayload.error.fieldErrors ?? {};
+            const firstFieldError = Object.values(fieldErrors).flat()[0];
+            message = firstFieldError ?? errorPayload.error.formErrors?.[0] ?? message;
+          }
+        }
+        throw new Error(message);
+      }
+      await logEventAction({ shareId, type: "ACCEPT", data: { signatureId: (json as { signatureId?: string })?.signatureId } });
+      return (json ?? {}) as { deposit?: number | null; signatureId?: string | null };
+    },
+    onMutate: () => {
+      setAcceptError(null);
+    },
+    onSuccess: (data) => {
+      setQuoteState((prev) => ({
+        deposit: typeof data.deposit === "number" ? data.deposit : prev.deposit,
+        depositPaidAt: prev.depositPaidAt,
+        signatureId: data.signatureId ?? prev.signatureId ?? null
+      }));
+      if (acceptSlideIndex >= 0) {
+        setActiveIndex(acceptSlideIndex);
+      }
+    },
+    onError: (error) => {
+      setAcceptError(error.message);
+    }
+  });
+
+  const checkoutMutation = useMutation<{ url?: string }, Error, void>({
+    mutationFn: async () => {
+      if (!isAccepted) {
+        throw new Error("Accept the proposal before paying the deposit.");
+      }
+      if (quoteState.deposit === null || quoteState.deposit <= 0) {
+        throw new Error("Deposit amount is not available yet.");
+      }
+      const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shareId })
       });
+      const json = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error("Failed to accept proposal");
+        const message =
+          (json && typeof json === "object" && json !== null && "error" in json && typeof json.error === "string")
+            ? json.error
+            : "Unable to create checkout session";
+        throw new Error(message);
       }
-      await logEventAction({ shareId, type: "ACCEPT" });
-      return (await res.json()) as { ok: boolean };
+      const payload = (json ?? {}) as { url?: string };
+      if (payload.url) {
+        window.location.href = payload.url;
+      }
+      await logEventAction({ shareId, type: "PAY" });
+      return payload;
+    },
+    onMutate: () => {
+      setCheckoutError(null);
+    },
+    onError: (error) => {
+      setCheckoutError(error.message);
     }
   });
 
-  const checkoutMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lineItems: Object.entries(selections)
-            .filter(([, qty]) => qty > 0)
-            .map(([optionId, qty]) => {
-              const option = slides.flatMap((s) => s.options).find((o) => o.id === optionId);
-              const base = option?.priceOverride ?? option?.catalogItem?.unitPrice ?? 0;
-              return {
-                quantity: qty,
-                price_data: {
-                  currency,
-                  product_data: {
-                    name: option?.catalogItem?.name ?? option?.description ?? "Custom option"
-                  },
-                  unit_amount: Math.round((Number(base) || 0) * 100)
-                }
-              };
-            })
-        })
-      });
-      if (!res.ok) {
-        throw new Error("Unable to create checkout session");
-      }
-      const json = (await res.json()) as { url?: string };
-      if (json.url) {
-        window.location.href = json.url;
-      }
-      await logEventAction({ shareId, type: "PAY" });
-      return json;
-    }
-  });
+  const handleAccept = acceptanceForm.handleSubmit((values) => acceptMutation.mutate(values));
+  const acceptanceValues = acceptanceForm.watch();
 
   const goNext = () => setActiveIndex((index) => Math.min(index + 1, slides.length - 1));
   const goPrevious = () => setActiveIndex((index) => Math.max(index - 1, 0));
@@ -378,50 +472,164 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
         ) : null}
 
         {activeSlide.type === "REVIEW" ? (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Selections</h3>
+          <div className="space-y-6">
             <div className="space-y-3">
-              {slides
-                .flatMap((slide) => slide.options)
-                .filter((option) => (selections[option.id] ?? 0) > 0)
-                .map((option) => (
-                  <div key={option.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-3">
-                    <div>
-                      <p className="font-medium">{option.catalogItem?.name ?? option.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Qty {selections[option.id]} · {formatCurrency(Number(option.priceOverride ?? option.catalogItem?.unitPrice ?? 0), currency)}
-                      </p>
+              <h3 className="text-lg font-semibold">Selections</h3>
+              <div className="space-y-3">
+                {selectedOptionDetails.length ? (
+                  selectedOptionDetails.map((detail) => (
+                    <div
+                      key={detail.option.id}
+                      className="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">{detail.option.catalogItem?.name ?? detail.option.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Qty {detail.qty} · {formatCurrency(detail.unitPrice, currency)} each
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 sm:justify-end">
+                        <span className="text-sm font-semibold">
+                          {formatCurrency(detail.lineTotal, currency)}
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => clearSelection(detail.option)}>
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => clearSelection(option)}>
-                      Remove
-                    </Button>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="rounded-xl border border-dashed bg-muted/30 px-4 py-6 text-sm text-muted-foreground">
+                    Choose at least one option to generate a proposal summary.
+                  </p>
+                )}
+              </div>
             </div>
+
+            <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+              <h4 className="text-base font-semibold">Itemized totals</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>{formatCurrency(currentTotals.subtotal, currency)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span>{formatCurrency(currentTotals.tax, currency)}</span>
+                </div>
+                <div className="flex items-center justify-between text-base font-semibold">
+                  <span>Total</span>
+                  <span>{formatCurrency(currentTotals.total, currency)}</span>
+                </div>
+                {estimatedDeposit !== null ? (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Estimated deposit (20%)</span>
+                    <span>{formatCurrency(estimatedDeposit, currency)}</span>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <Form {...acceptanceForm}>
+              <form className="space-y-4" noValidate>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={acceptanceForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Accepting on behalf of</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Full name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={acceptanceForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="you@example.com"
+                            inputMode="email"
+                            autoComplete="email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  We’ll send confirmations and the PDF receipt to this address after payment.
+                </p>
+              </form>
+            </Form>
           </div>
         ) : null}
 
         {activeSlide.type === "ACCEPT" ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <h3 className="text-lg font-semibold">Ready to move forward?</h3>
-            <p className="text-muted-foreground">
-              Accept to lock pricing. You can optionally pay the deposit now and book a kickoff call.
-            </p>
+            <div className="space-y-3 rounded-2xl border bg-card p-5 shadow-sm">
+              <p className="text-sm text-muted-foreground">
+                Confirm the details captured on the review step and submit to generate a signature record.
+              </p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Acceptor</span>
+                <span className="font-medium">
+                  {acceptanceValues.name || props.quoteStatus?.acceptedByName || "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Email</span>
+                <span className="font-medium">
+                  {acceptanceValues.email || props.quoteStatus?.acceptedByEmail || "—"}
+                </span>
+              </div>
+              {depositDisplay !== null ? (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Deposit</span>
+                  <span className="flex items-center gap-2 font-medium">
+                    {depositPaid ? <Badge variant="outline">Paid</Badge> : null}
+                    {formatCurrency(depositDisplay, currency)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+            {acceptError ? <p className="text-sm text-destructive">{acceptError}</p> : null}
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button className="w-full sm:w-auto" onClick={() => acceptMutation.mutate()} disabled={acceptMutation.isPending}>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={handleAccept}
+                disabled={acceptMutation.isPending || isAccepted}
+              >
                 {acceptMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Accept proposal
+                {isAccepted ? "Accepted" : "Accept proposal"}
               </Button>
               <Button
                 className="w-full sm:w-auto"
                 variant="outline"
                 onClick={() => checkoutMutation.mutate()}
-                disabled={checkoutMutation.isPending}
+                disabled={
+                  checkoutMutation.isPending ||
+                  quoteState.deposit === null ||
+                  quoteState.deposit <= 0 ||
+                  !isAccepted ||
+                  depositPaid
+                }
               >
                 {checkoutMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Pay deposit via Stripe
+                {depositPaid ? "Deposit complete" : "Pay deposit via Stripe"}
               </Button>
             </div>
+            {checkoutError ? <p className="text-sm text-destructive">{checkoutError}</p> : null}
             <Button asChild variant="ghost" className="w-full sm:w-auto">
               <a href="https://cal.com" target="_blank" rel="noreferrer">
                 Schedule kickoff demo
@@ -450,6 +658,9 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
           isSaving={isPending || acceptMutation.isPending || checkoutMutation.isPending}
           delta={summaryDelta ? { label: summaryDelta.label, amount: summaryDelta.amount } : null}
           errorMessage={pricingError}
+          deposit={quoteState.deposit}
+          depositPaid={depositPaid}
+          signatureId={quoteState.signatureId}
         />
 
         {activeSlide.type !== "PORTFOLIO" ? (

@@ -57,5 +57,11 @@ export type ProposalRuntimeProps = {
     total: number;
     deposit?: number | null;
   } | null;
+  quoteStatus?: {
+    signatureId?: string | null;
+    depositPaidAt?: string | null;
+    acceptedByName?: string | null;
+    acceptedByEmail?: string | null;
+  } | null;
   theme?: Record<string, unknown> | null;
 };

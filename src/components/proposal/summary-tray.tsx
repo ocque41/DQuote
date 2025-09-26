@@ -22,6 +22,9 @@ type SummaryTrayProps = {
   isSaving: boolean;
   delta?: SummaryDelta | null;
   errorMessage?: string | null;
+  deposit?: number | null;
+  depositPaid?: boolean;
+  signatureId?: string | null;
 };
 
 export function SummaryTray({
@@ -32,16 +35,23 @@ export function SummaryTray({
   initialTotals,
   isSaving,
   delta,
-  errorMessage
+  errorMessage,
+  deposit,
+  depositPaid,
+  signatureId
 }: SummaryTrayProps) {
   const displayTotals = totals ?? initialTotals ?? { subtotal: 0, tax: 0, total: 0 };
-  const deposit = initialTotals?.deposit ?? null;
+  const depositAmount = deposit ?? initialTotals?.deposit ?? null;
   const deltaDisplay = delta ?? null;
   const statusMessage = errorMessage
     ? errorMessage
-    : isSaving
-      ? "Saving your selections…"
-      : "Selections auto-save and sync for everyone viewing this link.";
+    : depositPaid
+      ? "Deposit received. We’ll follow up with next steps shortly."
+      : signatureId
+        ? "Accepted — pay the deposit when you’re ready to secure the date."
+        : isSaving
+          ? "Saving your selections…"
+          : "Selections auto-save and sync for everyone viewing this link.";
   const statusClass = errorMessage ? "text-destructive" : "text-muted-foreground";
   const statusBackground = errorMessage ? "bg-destructive/10 border-destructive/40" : "bg-muted/50";
 
@@ -74,7 +84,13 @@ export function SummaryTray({
             </span>
           </div>
         ) : null}
-        {deposit ? <SummaryRow label="Deposit" value={formatCurrency(deposit, currency)} /> : null}
+        {depositAmount !== null ? (
+          <SummaryRow
+            label={depositPaid ? "Deposit paid" : "Deposit due"}
+            value={formatCurrency(depositAmount, currency)}
+            emphasize={depositPaid}
+          />
+        ) : null}
         <div className={cn("rounded-xl border p-4 text-xs", statusBackground, statusClass)}>
           {statusMessage}
         </div>

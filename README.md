@@ -62,7 +62,7 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 ## Stripe Integration
 - Configure test keys in `.env.local` and ensure `NEXT_PUBLIC_APP_URL` reflects your dev domain.
 - Create a webhook endpoint pointing to `/api/stripe/webhook` (future enhancement) and store the signing secret in `STRIPE_WEBHOOK_SECRET`.
-- The Checkout handler expects `lineItems` formatted per Stripe's API; the proposal runtime assembles them from current selections.
+- After acceptance the `/api/stripe/checkout` handler launches a deposit-only Checkout Session (line item name `DQuote Deposit — <proposal title>`) using the stored quote totals, so the client only needs to provide the `shareId`.
 
 ## shadcn/ui with Custom Registry
 Components are installed from the local registry at `registry/`. Two convenient options:
@@ -109,9 +109,10 @@ Need to pull these components into another project with the familiar registry sy
 1. Seed the database (`pnpm prisma db seed`).
 2. Open `http://localhost:3000/proposals/dq-demo-aurora`.
 3. Step through slides, toggle add-ons, and watch totals update alongside the portfolio panel as it refreshes with 2–4 matched proofs.
-4. Click **Accept proposal** (status change + analytics event).
-5. Hit **Pay deposit via Stripe** to launch Checkout (requires valid keys).
-6. After acceptance, use the **Schedule kickoff demo** button to drive the Calendly hand-off.
+4. On the **Review** step, capture the acceptor name and email to prep the signature record.
+5. Move to **Accept** and click **Accept proposal** to store the signature metadata and compute the 20 % deposit.
+6. Hit **Pay deposit via Stripe** to launch Checkout (requires valid test keys); returning with `session_id` marks the quote as paid and updates the runtime badge.
+7. Use the **Schedule kickoff demo** button to drive the Calendly hand-off.
 
 ## Project Structure Highlights
 ```
@@ -127,6 +128,8 @@ registry/                # Custom shadcn registry items
 ## API Endpoints
 - `POST /api/pricing` — calculate subtotal, tax, and total for a proposal based on the provided selections.
   - Responds with `400` when selections violate require/mutex rules and includes a `violations` array for context.
+- `POST /api/accept` — validate the acceptor details, persist signature metadata (UUID, timestamp, IP/UA), and respond with the computed 20 % deposit amount.
+- `POST /api/stripe/checkout` — create a Stripe Checkout Session for the stored deposit, persist the session/payment IDs, and return the hosted payment URL.
 
 ## Testing & Quality
 - `pnpm lint`
