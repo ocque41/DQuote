@@ -68,7 +68,9 @@ export default async function PublicProposalPage({ params, searchParams }: Propo
 
   if (sessionId && process.env.STRIPE_SECRET_KEY && proposal.quote) {
     try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+        apiVersion: "2024-06-20" as Stripe.LatestApiVersion
+      });
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ["payment_intent"]
       });

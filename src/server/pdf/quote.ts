@@ -1,7 +1,5 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
-import puppeteer, { PuppeteerLaunchOptions } from "puppeteer";
+import puppeteer, { LaunchOptions } from "puppeteer";
+import { put } from "@vercel/blob";
 
 interface GenerateQuotePdfOptions {
   shareId: string;
@@ -10,17 +8,12 @@ interface GenerateQuotePdfOptions {
 }
 
 export async function generateQuotePdf({ shareId, quoteId, baseUrl }: GenerateQuotePdfOptions) {
-  const receiptsDir = path.join(process.cwd(), "public", "receipts");
-  await fs.mkdir(receiptsDir, { recursive: true });
-
   const fileName = `${quoteId}-${Date.now()}.pdf`;
-  const filePath = path.join(receiptsDir, fileName);
-  const publicUrl = `/receipts/${fileName}`;
 
   const targetUrl = new URL(`/proposals/${shareId}/receipt`, baseUrl).toString();
 
-  const launchOptions: PuppeteerLaunchOptions = {
-    headless: "new",
+  const launchOptions: LaunchOptions = {
+    headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   };
 
@@ -43,8 +36,12 @@ export async function generateQuotePdf({ shareId, quoteId, baseUrl }: GenerateQu
         left: "24px",
       },
     });
-    await fs.writeFile(filePath, buffer);
-    return { pdfUrl: publicUrl, filePath };
+    const pdfBuffer = Buffer.from(buffer);
+    const blob = await put(`receipts/${fileName}`, pdfBuffer, {
+      access: "public",
+      contentType: "application/pdf"
+    });
+    return { pdfUrl: blob.url, fileName, buffer: pdfBuffer };
   } finally {
     await browser.close();
   }

@@ -1,10 +1,13 @@
-import type { User as SupabaseUser } from "@supabase/supabase-js";
-
-import { getServerSupabaseClient } from "@/lib/supabase/server";
 import { prisma } from "@/server/prisma";
+import { auth } from "@auth";
 
 export interface ViewerContext {
-  supabaseUser: SupabaseUser;
+  sessionUser: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string | null;
+  };
   orgUser: {
     id: string;
     email: string;
@@ -19,23 +22,16 @@ export interface ViewerContext {
 }
 
 export async function getViewerContext(): Promise<ViewerContext | null> {
-  const supabase = getServerSupabaseClient();
-  const {
-    data: { user },
-    error
-  } = await supabase.auth.getUser();
+  const session = await auth();
 
-  if (error) {
-    console.error("Failed to fetch Supabase user", error.message);
+  if (!session?.user?.email) {
     return null;
   }
 
-  if (!user) {
-    return null;
-  }
+  const email = session.user.email.toLowerCase();
 
   let dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { email },
     include: { org: true }
   });
 
@@ -44,29 +40,36 @@ export async function getViewerContext(): Promise<ViewerContext | null> {
     if (!fallbackOrg) {
       return null;
     }
-    const fullName = typeof user.user_metadata?.full_name === "string" ? (user.user_metadata.full_name as string) : null;
-    const email = user.email ?? dbUser?.email ?? `user-${user.id}@example.com`;
+    const displayName = session.user.name ?? dbUser?.name ?? email;
     dbUser = await prisma.user.upsert({
-      where: { id: user.id },
+      where: { email },
       create: {
-        id: user.id,
         orgId: fallbackOrg.id,
         email,
-        name: fullName ?? email,
+        name: displayName,
         role: dbUser?.role ?? "admin"
       },
       update: {
         orgId: fallbackOrg.id,
         email,
-        name: fullName ?? email,
+        name: displayName,
         role: dbUser?.role ?? "admin"
       },
       include: { org: true }
     });
   }
 
+  if (!dbUser?.org) {
+    return null;
+  }
+
   return {
-    supabaseUser: user,
+    sessionUser: {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      role: dbUser.role ?? null
+    },
     orgUser: {
       id: dbUser.id,
       email: dbUser.email,

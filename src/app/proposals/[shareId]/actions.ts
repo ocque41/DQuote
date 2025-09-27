@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { EventType } from "@prisma/client";
+import { EventType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/server/prisma";
 
@@ -20,7 +20,7 @@ const UpdateSelectionsSchema = z.object({
 const EventSchema = z.object({
   shareId: z.string(),
   type: z.nativeEnum(EventType),
-  data: z.record(z.any()).optional()
+  data: z.record(z.string(), z.any()).optional()
 });
 
 export async function updateSelectionsAction(input: z.infer<typeof UpdateSelectionsSchema>) {
@@ -73,7 +73,7 @@ export async function logEventAction(input: z.infer<typeof EventSchema>) {
     data: {
       proposalId: proposal.id,
       type: parsed.data.type,
-      data: parsed.data.data ?? null
+      data: parsed.data.data ? (parsed.data.data as Prisma.InputJsonValue) : Prisma.JsonNull
     }
   });
 }

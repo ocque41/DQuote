@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-import { SupabaseProvider } from "@/components/providers/supabase-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { getServerSupabaseClient } from "@/lib/supabase/server";
+import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { auth } from "@auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,17 +26,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = getServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await auth();
 
   return (
     <html lang="en" className="bg-background">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}>
-        <SupabaseProvider session={session}>
+        <AuthSessionProvider session={session}>
           <QueryProvider>{children}</QueryProvider>
-        </SupabaseProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

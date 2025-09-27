@@ -68,7 +68,7 @@ export async function POST(req: Request) {
   ]);
 
   let pdfUrl: string | null = null;
-  let pdfPath: string | null = null;
+  let pdfAttachment: { fileName: string; buffer: Buffer } | null = null;
   const origin = new URL(req.url).origin;
 
   try {
@@ -78,7 +78,10 @@ export async function POST(req: Request) {
       baseUrl: origin
     });
     pdfUrl = result.pdfUrl;
-    pdfPath = result.filePath;
+    pdfAttachment = {
+      fileName: result.fileName,
+      buffer: Buffer.from(result.buffer)
+    };
   } catch (error) {
     console.error("Failed to generate proposal PDF", error);
   }
@@ -106,7 +109,7 @@ export async function POST(req: Request) {
         deposit: computedDeposit,
         currency: proposal.quote.currency,
         receiptUrl: pdfUrl,
-        pdfPath,
+        pdfAttachment,
         baseUrl: origin
       });
       receiptEmailSentAt = new Date();

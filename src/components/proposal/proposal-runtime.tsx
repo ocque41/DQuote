@@ -93,14 +93,15 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const { proposalId, shareId, slides, assets, orgName, clientName, clientCompany, currency } = props;
   const themeTokens = useMemo(() => buildThemeTokens(props.theme ?? null), [props.theme]);
   const themeStyle = useMemo<CSSProperties>(
-    () => ({
-      "--proposal-brand": themeTokens.brandColor,
-      "--proposal-brand-surface": themeTokens.brandSurface,
-      "--proposal-brand-foreground": themeTokens.brandForeground,
-      "--proposal-accent": themeTokens.accentColor,
-      "--proposal-accent-surface": themeTokens.accentSurface,
-      "--proposal-accent-foreground": themeTokens.accentForeground,
-    }),
+    () =>
+      ({
+        "--proposal-brand": themeTokens.brandColor,
+        "--proposal-brand-surface": themeTokens.brandSurface,
+        "--proposal-brand-foreground": themeTokens.brandForeground,
+        "--proposal-accent": themeTokens.accentColor,
+        "--proposal-accent-surface": themeTokens.accentSurface,
+        "--proposal-accent-foreground": themeTokens.accentForeground,
+      }) as CSSProperties,
     [themeTokens]
   );
 
@@ -113,7 +114,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [, startLogTransition] = useTransition();
-  const viewerIdRef = useRef<string>();
+  const viewerIdRef = useRef<string | undefined>(undefined);
   if (!viewerIdRef.current) {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       viewerIdRef.current = crypto.randomUUID();
@@ -335,7 +336,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     pendingChangeRef.current = { label };
   };
 
-  const emitSelectionEvent = (type: EventType.SELECT | EventType.DESELECT, option: RuntimeOption, qty: number) => {
+  const emitSelectionEvent = (type: EventType, option: RuntimeOption, qty: number) => {
     const meta = optionMeta.get(option.id);
     logRuntimeEvent(type, {
       optionId: option.id,
@@ -348,7 +349,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   };
 
   const setChoiceSelection = (slide: RuntimeSlide, option: RuntimeOption) => {
-    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
+    const eventsToLog: Array<{ type: EventType; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       const next = { ...prev };
       let changed = false;
@@ -378,7 +379,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   };
 
   const toggleAddon = (option: RuntimeOption) => {
-    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
+    const eventsToLog: Array<{ type: EventType; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       const qty = prev[option.id] ?? 0;
       const nextQty = qty > 0 ? 0 : option.defaultQty ?? 1;
@@ -396,7 +397,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   };
 
   const adjustQuantity = (option: RuntimeOption, delta: number) => {
-    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
+    const eventsToLog: Array<{ type: EventType; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       const current = prev[option.id] ?? option.defaultQty ?? 0;
       const min = option.minQty ?? 0;
@@ -416,7 +417,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   };
 
   const clearSelection = (option: RuntimeOption) => {
-    const eventsToLog: Array<{ type: EventType.SELECT | EventType.DESELECT; option: RuntimeOption; qty: number }> = [];
+    const eventsToLog: Array<{ type: EventType; option: RuntimeOption; qty: number }> = [];
     setSelections((prev) => {
       if (!(prev[option.id] ?? 0)) {
         eventsToLog.length = 0;

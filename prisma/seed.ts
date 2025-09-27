@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import bcrypt from "bcryptjs";
+
 import {
   PrismaClient,
   Prisma,
@@ -33,13 +35,17 @@ async function main() {
     }
   });
 
+  const passwordHash = await bcrypt.hash("dquote-demo", 10);
+
   await prisma.user.create({
     data: {
       id: "11111111-1111-1111-1111-111111111111",
       orgId: org.id,
       email: "founder@aurora.events",
       name: "Avery Rivera",
-      role: "admin"
+      role: "admin",
+      passwordHash,
+      emailVerified: new Date()
     }
   });
 

@@ -9,7 +9,7 @@ const BodySchema = z.object({
   clientId: z.string().uuid(),
   title: z.string().min(3),
   expiresAt: z.string().datetime().optional(),
-  theme: z.record(z.any()).optional()
+  theme: z.record(z.string(), z.any()).optional()
 });
 
 export async function POST(req: Request) {

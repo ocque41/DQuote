@@ -1,3 +1,13 @@
+# SPRINT 10 PLAN
+
+## Item 1: Auth & storage migration
+- Replace Supabase auth helpers with NextAuth credentials backed by Prisma + Neon, updating middleware and UI flows.
+- Persist generated quote PDFs to Vercel Blob instead of the filesystem, removing Supabase references from docs/env.
+
+### Acceptance Criteria
+- [x] `/app` and `/admin` routes rely on NextAuth sessions; sign-in/out works against seeded Prisma credentials without Supabase codepaths.
+- [x] README and `.env.example` describe Neon + NextAuth + Vercel Blob setup with no Supabase env vars or dependencies remaining.
+
 # SPRINT 9 PLAN
 
 ## Item 1: Supabase authentication & multi-org permissions
@@ -174,4 +184,14 @@
 ### Acceptance Criteria
 - [x] README enumerates final setup/run commands, environment variables, and notes on Stripe webhooks/Supabase usage.
 - [x] `.env.example` contains placeholders for all required secrets and optional configs referenced in documentation.
+
+# SPRINT 11 PLAN
+
+## Item 1: Finalize Neon-auth storage migration
+- Remove remaining Supabase-specific auth/storage references, relying on NextAuth credentials with Prisma + Neon.
+- Persist generated receipts via Vercel Blob and ensure acceptance + proposal flows read from Blob-backed URLs only.
+
+### Acceptance Criteria
+- [x] Supabase client/helpers are absent from the runtime, middleware, and docs; `.env.example` and README only list Neon, NextAuth, and Blob configuration.
+- [x] Authentication/session flows use the new NextAuth provider (server + client) and proposal acceptance writes receipts exclusively to Vercel Blob.
 
