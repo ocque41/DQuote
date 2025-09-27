@@ -62,7 +62,9 @@ export const columns: ColumnDef<Quote, unknown>[] = [
   },
   {
     accessorKey: "symbol",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Symbol" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Symbol" />
+    ),
     cell: ({ row }) => (
       <Badge variant="outline" className="font-semibold uppercase">
         {row.original.symbol}
@@ -72,48 +74,67 @@ export const columns: ColumnDef<Quote, unknown>[] = [
   },
   {
     accessorKey: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Name" />
+    ),
     cell: ({ row }) => (
       <div>
-        <p className="font-medium text-foreground">{row.original.name}</p>
-        <p className="text-xs text-muted-foreground">{currencyFormatter.format(row.original.last)} last</p>
+        <p className="text-foreground font-medium">{row.original.name}</p>
+        <p className="text-muted-foreground text-xs">
+          {currencyFormatter.format(row.original.last)} last
+        </p>
       </div>
     ),
   },
   {
     accessorKey: "bid",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Bid" align="right" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Bid" align="right" />
+    ),
     cell: ({ row }) => (
-      <div className="text-right tabular-nums">{currencyFormatter.format(row.original.bid)}</div>
+      <div className="text-right tabular-nums">
+        {currencyFormatter.format(row.original.bid)}
+      </div>
     ),
     enableHiding: false,
   },
   {
     accessorKey: "ask",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Ask" align="right" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Ask" align="right" />
+    ),
     cell: ({ row }) => (
-      <div className="text-right tabular-nums">{currencyFormatter.format(row.original.ask)}</div>
+      <div className="text-right tabular-nums">
+        {currencyFormatter.format(row.original.ask)}
+      </div>
     ),
   },
   {
     accessorKey: "last",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Last" align="right" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Last" align="right" />
+    ),
     cell: ({ row }) => (
-      <div className="text-right tabular-nums">{currencyFormatter.format(row.original.last)}</div>
+      <div className="text-right tabular-nums">
+        {currencyFormatter.format(row.original.last)}
+      </div>
     ),
   },
   {
     accessorKey: "changePct",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Change" align="right" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Change" align="right" />
+    ),
     cell: ({ row }) => {
       const value = row.original.changePct;
-      const Icon = value > 0 ? ArrowUpIcon : value < 0 ? ArrowDownIcon : MinusIcon;
+      const Icon =
+        value > 0 ? ArrowUpIcon : value < 0 ? ArrowDownIcon : MinusIcon;
       return (
         <div
           className={cn(
             "flex items-center justify-end gap-1 tabular-nums",
             value > 0 && "text-emerald-600 dark:text-emerald-400",
-            value < 0 && "text-red-500 dark:text-red-400"
+            value < 0 && "text-red-500 dark:text-red-400",
           )}
         >
           <Icon className="size-3" />
@@ -133,10 +154,15 @@ export const columns: ColumnDef<Quote, unknown>[] = [
   },
   {
     accessorKey: "updatedAt",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Updated" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Updated" />
+    ),
     cell: ({ row }) => {
       return (
-        <time dateTime={row.original.updatedAt.toISOString()} className="text-sm text-muted-foreground">
+        <time
+          dateTime={row.original.updatedAt.toISOString()}
+          className="text-muted-foreground text-sm"
+        >
           {row.original.updatedAt.toLocaleTimeString("en-US", {
             hour: "numeric",
             minute: "2-digit",
@@ -145,7 +171,8 @@ export const columns: ColumnDef<Quote, unknown>[] = [
       );
     },
     sortingFn: (rowA, rowB) =>
-      new Date(rowA.original.updatedAt).getTime() - new Date(rowB.original.updatedAt).getTime(),
+      new Date(rowA.original.updatedAt).getTime() -
+      new Date(rowB.original.updatedAt).getTime(),
   },
   {
     accessorKey: "pinned",

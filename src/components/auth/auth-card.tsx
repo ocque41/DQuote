@@ -3,30 +3,41 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useStackApp } from "@stackframe/stack";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { SignIn, SignUp, useStackApp, useUser } from "@stackframe/stack";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const AFTER_AUTH_RETURN_KEY = "dquote_after_auth_return_to";
 
-const credentialsSchema = z.object({
-  email: z.string().min(1, { message: "Email is required." }).email("Enter a valid email."),
-  password: z
-    .string()
-    .min(1, { message: "Password is required." })
-    .min(8, { message: "Password must be at least 8 characters." }),
-});
-
-type CredentialsFormValues = z.infer<typeof credentialsSchema>;
-
 type AuthMode = "login" | "signup";
+
+const marketingLinks = {
+  login: {
+    title: "Welcome back",
+    subtitle: "Sign in to continue building proposals.",
+    footerPrompt: "New to DQuote?",
+    footerHref: "/signup",
+    footerCta: "Create an account",
+  },
+  signup: {
+    title: "Create your DQuote account",
+    subtitle: "Launch interactive proposals in minutes.",
+    footerPrompt: "Already have an account?",
+    footerHref: "/login",
+    footerCta: "Sign in",
+  },
+} as const satisfies Record<
+  AuthMode,
+  {
+    title: string;
+    subtitle: string;
+    footerPrompt: string;
+    footerHref: string;
+    footerCta: string;
+  }
+>;
 
 function resolveRedirectParam(rawRedirect: string | null) {
   if (typeof window === "undefined") {
@@ -42,32 +53,29 @@ function resolveRedirectParam(rawRedirect: string | null) {
     if (candidate.origin !== window.location.origin) {
       return "/dashboard";
     }
-    return `${candidate.pathname}${candidate.search}${candidate.hash}` || "/dashboard";
+    return (
+      `${candidate.pathname}${candidate.search}${candidate.hash}` ||
+      "/dashboard"
+    );
   } catch {
     return "/dashboard";
   }
 }
 
-function getModeCopy(mode: AuthMode) {
-  if (mode === "signup") {
-    return {
-      title: "Create your DQuote account",
-      subtitle: "Launch interactive proposals in minutes.",
-      submitLabel: "Create account",
-      footerPrompt: "Already have an account?",
-      footerHref: "/login",
-      footerCta: "Sign in",
-    } as const;
+async function logAuthEvent(payload: {
+  status: string;
+  provider?: string | null;
+  context?: Record<string, unknown>;
+}) {
+  try {
+    await fetch("/api/auth/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("[auth] client log failed", error);
   }
-
-  return {
-    title: "Welcome back",
-    subtitle: "Sign in to continue building proposals.",
-    submitLabel: "Sign in",
-    footerPrompt: "New to DQuote?",
-    footerHref: "/signup",
-    footerCta: "Create an account",
-  } as const;
 }
 
 export interface AuthCardProps extends React.ComponentProps<"div"> {
@@ -75,18 +83,19 @@ export interface AuthCardProps extends React.ComponentProps<"div"> {
 }
 
 export function AuthCard({ mode, className, ...props }: AuthCardProps) {
-  const copy = getModeCopy(mode);
-  const stackApp = useStackApp();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const stackApp = useStackApp();
+  const user = useUser();
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [isPending, startTransition] = React.useTransition();
-
-  const oauthProviders = stackApp.useProject().config.oauthProviders;
-  const redirectParam = searchParams?.get("redirect") ?? searchParams?.get("after_auth_return_to");
+  const redirectParam =
+    searchParams?.get("redirect") ?? searchParams?.get("after_auth_return_to");
   const storedRedirect =
-    typeof window !== "undefined" ? window.sessionStorage.getItem(AFTER_AUTH_RETURN_KEY) : null;
+    typeof window !== "undefined"
+      ? window.sessionStorage.getItem(AFTER_AUTH_RETURN_KEY)
+      : null;
   const redirectTarget = resolveRedirectParam(redirectParam ?? storedRedirect);
+  const copy = marketingLinks[mode];
 
   React.useEffect(() => {
     if (typeof window === "undefined" || !redirectParam) {
@@ -96,14 +105,6 @@ export function AuthCard({ mode, className, ...props }: AuthCardProps) {
     window.sessionStorage.setItem(AFTER_AUTH_RETURN_KEY, safeRedirect);
   }, [redirectParam]);
 
-  const form = useForm<CredentialsFormValues>({
-    resolver: zodResolver(credentialsSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
   React.useEffect(() => {
     let active = true;
 
@@ -111,185 +112,118 @@ export function AuthCard({ mode, className, ...props }: AuthCardProps) {
       .callOAuthCallback()
       .then((handled) => {
         if (!active || !handled) return;
-        if (typeof window !== "undefined") {
-          window.sessionStorage.removeItem(AFTER_AUTH_RETURN_KEY);
-        }
-        router.replace(redirectTarget);
-        router.refresh();
+        void logAuthEvent({ status: "oauth-callback-success" });
       })
       .catch((error) => {
         if (!active) return;
         console.error("OAuth callback failed", error);
-        setErrorMessage("We couldn’t finish signing you in. Try again or use another method.");
+        setErrorMessage(
+          "We couldn’t finish signing you in. Try again or use another method.",
+        );
+        toast.error(
+          "We couldn’t finish signing you in. Try again or use another method.",
+        );
+        void logAuthEvent({
+          status: "oauth-callback-error",
+          context: { message: String(error) },
+        });
       });
 
     return () => {
       active = false;
     };
-  }, [redirectTarget, router, stackApp]);
+  }, [stackApp]);
 
-  const onSubmit = form.handleSubmit((values) => {
-    setErrorMessage(null);
-    startTransition(async () => {
-      const result =
-        mode === "login"
-          ? await stackApp.signInWithCredential({
-              email: values.email,
-              password: values.password,
-              noRedirect: true,
-            })
-          : await stackApp.signUpWithCredential({
-              email: values.email,
-              password: values.password,
-              noRedirect: true,
-            });
+  React.useEffect(() => {
+    if (!user) {
+      return;
+    }
 
-      if (result.status === "error") {
-        console.warn(`${mode} failed`, result.error);
-        setErrorMessage(result.error?.message ?? "Unable to continue. Check your details and try again.");
-        return;
-      }
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(AFTER_AUTH_RETURN_KEY);
+    }
 
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(AFTER_AUTH_RETURN_KEY);
-      }
-      router.replace(redirectTarget);
-      router.refresh();
+    void logAuthEvent({
+      status: mode === "login" ? "signed-in" : "signed-up",
+      context: { userId: user.id },
     });
-  });
-
-  const forgotPasswordHref = stackApp.urls.forgotPassword ?? "/handler/forgot-password";
+    router.replace(redirectTarget);
+    router.refresh();
+  }, [mode, redirectTarget, router, user]);
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden">
+      <Card className="border-border/60 overflow-hidden">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <div className="p-6 md:p-8">
-            <form className="flex flex-col gap-6" onSubmit={onSubmit}>
-              <div className="flex flex-col items-center text-center">
-                <h1 className="text-2xl font-bold">{copy.title}</h1>
-                <p className="text-balance text-muted-foreground">{copy.subtitle}</p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor={`${mode}-email`}>Email</Label>
-                <Input
-                  id={`${mode}-email`}
-                  type="email"
-                  autoComplete={mode === "login" ? "email" : "new-email"}
-                  placeholder="you@example.com"
-                  disabled={isPending}
-                  {...form.register("email")}
+          <div className="flex flex-col justify-between gap-6 p-6 md:p-8">
+            <div className="space-y-3 text-center">
+              <h1 className="text-foreground text-2xl font-semibold">
+                {copy.title}
+              </h1>
+              <p className="text-muted-foreground text-sm text-balance md:text-base">
+                {copy.subtitle}
+              </p>
+            </div>
+            <div className="flex justify-center">
+              {mode === "login" ? (
+                <SignIn
+                  fullPage={false}
+                  automaticRedirect={false}
+                  firstTab="password"
+                  extraInfo={
+                    <span className="text-muted-foreground text-sm">
+                      Use your company email to continue.
+                    </span>
+                  }
                 />
-                {form.formState.errors.email ? (
-                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
-                ) : null}
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor={`${mode}-password`}>Password</Label>
-                  {mode === "login" ? (
-                    <Link
-                      href={forgotPasswordHref}
-                      className="ml-auto text-sm underline-offset-2 hover:underline"
-                      prefetch={false}
-                    >
-                      Forgot password?
-                    </Link>
-                  ) : null}
-                </div>
-                <Input
-                  id={`${mode}-password`}
-                  type="password"
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  disabled={isPending}
-                  {...form.register("password")}
+              ) : (
+                <SignUp
+                  fullPage={false}
+                  automaticRedirect={false}
+                  firstTab="password"
+                  noPasswordRepeat
+                  extraInfo={
+                    <span className="text-muted-foreground text-sm">
+                      Invite teammates after you sign up.
+                    </span>
+                  }
                 />
-                {form.formState.errors.password ? (
-                  <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
-                ) : null}
-              </div>
-
-              {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
-
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? "Please wait" : copy.submitLabel}
-              </Button>
-
-              {oauthProviders.length ? (
-                <React.Fragment>
-                  <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                    <span className="relative z-10 bg-background px-2 text-muted-foreground">Or continue with</span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {oauthProviders.map((provider) => {
-                      const label = provider.id
-                        .split(/[-_]/)
-                        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-                        .join(" ");
-                      return (
-                        <Button
-                          key={provider.id}
-                          type="button"
-                          variant="outline"
-                          className="w-full capitalize"
-                          disabled={isPending}
-                          onClick={() => {
-                            setErrorMessage(null);
-                            if (typeof window !== "undefined") {
-                              window.sessionStorage.setItem(AFTER_AUTH_RETURN_KEY, redirectTarget);
-                            }
-                            void stackApp
-                              .signInWithOAuth(provider.id, { returnTo: redirectTarget })
-                              .catch((error) => {
-                                console.error("OAuth sign-in failed", error);
-                                setErrorMessage("We couldn’t redirect to the provider. Try again.");
-                              });
-                          }}
-                        >
-                          Continue with {label}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </React.Fragment>
-              ) : null}
-
-              <div className="text-center text-sm text-muted-foreground">
-                {copy.footerPrompt}{" "}
-                <Link href={copy.footerHref} className="underline underline-offset-4" prefetch={false}>
-                  {copy.footerCta}
-                </Link>
-              </div>
-            </form>
+              )}
+            </div>
+            <div className="text-muted-foreground text-center text-sm">
+              {copy.footerPrompt}{" "}
+              <Link
+                href={copy.footerHref}
+                className="text-primary font-medium underline-offset-4 hover:underline"
+              >
+                {copy.footerCta}
+              </Link>
+            </div>
+            {errorMessage ? (
+              <p className="text-destructive text-center text-sm">
+                {errorMessage}
+              </p>
+            ) : null}
           </div>
-          <div className="relative hidden bg-muted md:block">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/20" />
-            <div className="absolute inset-0 flex flex-col justify-end gap-6 p-8 text-left text-primary-foreground">
-              <div className="rounded-full bg-primary/20 px-3 py-1 text-xs font-medium text-primary">
+          <div className="from-primary/20 to-primary/40 relative hidden bg-gradient-to-br via-transparent md:block">
+            <div className="text-primary-foreground absolute inset-0 flex flex-col justify-end gap-6 p-8 text-left">
+              <div className="bg-primary/15 text-primary rounded-full px-3 py-1 text-xs font-medium tracking-wide uppercase">
                 Neon Auth x DQuote
               </div>
-              <p className="text-lg font-semibold text-primary-foreground/90">
-                Secure sign-in backed by Neon Auth keeps your proposals safe while your team focuses on closing deals.
+              <p className="text-primary-foreground/90 text-lg font-semibold">
+                Secure sign-in backed by Neon Auth keeps your proposals safe
+                while your team focuses on closing deals.
               </p>
-              <p className="text-sm text-primary-foreground/70">
+              <p className="text-primary-foreground/70 text-sm">
                 SSO, passkeys, and multi-org controls are ready out of the box.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        By continuing you agree to our {" "}
-        <Link href="#" prefetch={false}>
-          Terms of Service
-        </Link>{" "}
-        and {" "}
-        <Link href="#" prefetch={false}>
-          Privacy Policy
-        </Link>
-        .
+      <div className="text-muted-foreground hover:[&_a]:text-primary text-center text-xs text-balance [&_a]:underline [&_a]:underline-offset-4">
+        By continuing you agree to our <Link href="#">Terms of Service</Link>{" "}
+        and <Link href="#">Privacy Policy</Link>.
       </div>
     </div>
   );

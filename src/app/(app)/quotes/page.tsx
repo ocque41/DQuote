@@ -5,7 +5,11 @@ import { requireUser } from "@/auth/requireUser";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { mainNavigation, resourceNavigation, secondaryNavigation } from "@/lib/navigation";
+import {
+  mainNavigation,
+  resourceNavigation,
+  secondaryNavigation,
+} from "@/lib/navigation";
 import { getViewerContext } from "@/server/auth";
 import { listQuotes } from "@/lib/data/quotes";
 
@@ -40,19 +44,20 @@ export default async function QuotesPage() {
         navMain={mainNavigation}
         resources={resourceNavigation}
         navSecondary={secondaryNavigation}
-        user={{ name: viewer.sessionUser.name, email: viewer.sessionUser.email }}
+        user={{
+          name: viewer.sessionUser.name,
+          email: viewer.sessionUser.email,
+        }}
       />
-      <SidebarInset>
+      <SidebarInset className="bg-muted/20">
         <SiteHeader
           title="Quote Terminal"
           subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
-            <div className="px-4 lg:px-6">
-              <QuotesDataTable data={quotes} />
-            </div>
+        <div className="flex flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-10">
+          <div className="border-border/70 bg-card/95 rounded-2xl border p-2 shadow-sm sm:p-4">
+            <QuotesDataTable data={quotes} />
           </div>
         </div>
       </SidebarInset>

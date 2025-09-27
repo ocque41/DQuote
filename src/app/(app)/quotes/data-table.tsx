@@ -37,7 +37,15 @@ import {
 import { cn } from "@/lib/utils";
 
 function exportToCsv(rows: Quote[]) {
-  const header = ["Symbol", "Name", "Bid", "Ask", "Last", "Change %", "Updated At"];
+  const header = [
+    "Symbol",
+    "Name",
+    "Bid",
+    "Ask",
+    "Last",
+    "Change %",
+    "Updated At",
+  ];
   const csv = [
     header.join(","),
     ...rows.map((row) =>
@@ -68,11 +76,16 @@ interface QuotesDataTableProps {
 export function QuotesDataTable({ data }: QuotesDataTableProps) {
   const [tableData, setTableData] = React.useState(() => data);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true },
   ]);
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [formState, setFormState] = React.useState({
     symbol: "",
@@ -149,7 +162,13 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
     const last = Number(formState.last);
     const changePct = Number(formState.changePct);
 
-    if (!formState.symbol || !formState.name || Number.isNaN(bid) || Number.isNaN(ask) || Number.isNaN(last)) {
+    if (
+      !formState.symbol ||
+      !formState.name ||
+      Number.isNaN(bid) ||
+      Number.isNaN(ask) ||
+      Number.isNaN(last)
+    ) {
       return;
     }
 
@@ -168,7 +187,14 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
       ...rows,
     ]);
 
-    setFormState({ symbol: "", name: "", bid: "", ask: "", last: "", changePct: "" });
+    setFormState({
+      symbol: "",
+      name: "",
+      bid: "",
+      ask: "",
+      last: "",
+      changePct: "",
+    });
     setIsCreateOpen(false);
   }
 
@@ -185,7 +211,9 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
             <SheetTitle>New quote</SheetTitle>
-            <SheetDescription>Add a ticker to track in the terminal.</SheetDescription>
+            <SheetDescription>
+              Add a ticker to track in the terminal.
+            </SheetDescription>
           </SheetHeader>
           <form className="grid gap-4 py-4" onSubmit={handleCreateQuote}>
             <div className="grid gap-2">
@@ -193,7 +221,12 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
               <Input
                 id="symbol"
                 value={formState.symbol}
-                onChange={(event) => setFormState((state) => ({ ...state, symbol: event.target.value }))}
+                onChange={(event) =>
+                  setFormState((state) => ({
+                    ...state,
+                    symbol: event.target.value,
+                  }))
+                }
                 placeholder="DQT"
                 autoCapitalize="characters"
                 required
@@ -204,7 +237,12 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
               <Input
                 id="name"
                 value={formState.name}
-                onChange={(event) => setFormState((state) => ({ ...state, name: event.target.value }))}
+                onChange={(event) =>
+                  setFormState((state) => ({
+                    ...state,
+                    name: event.target.value,
+                  }))
+                }
                 placeholder="DQuote Holdings"
                 required
               />
@@ -215,7 +253,12 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
                 <Input
                   id="bid"
                   value={formState.bid}
-                  onChange={(event) => setFormState((state) => ({ ...state, bid: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((state) => ({
+                      ...state,
+                      bid: event.target.value,
+                    }))
+                  }
                   inputMode="decimal"
                   placeholder="121.12"
                   required
@@ -226,7 +269,12 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
                 <Input
                   id="ask"
                   value={formState.ask}
-                  onChange={(event) => setFormState((state) => ({ ...state, ask: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((state) => ({
+                      ...state,
+                      ask: event.target.value,
+                    }))
+                  }
                   inputMode="decimal"
                   placeholder="121.78"
                   required
@@ -237,7 +285,12 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
                 <Input
                   id="last"
                   value={formState.last}
-                  onChange={(event) => setFormState((state) => ({ ...state, last: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((state) => ({
+                      ...state,
+                      last: event.target.value,
+                    }))
+                  }
                   inputMode="decimal"
                   placeholder="121.45"
                   required
@@ -249,7 +302,12 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
               <Input
                 id="changePct"
                 value={formState.changePct}
-                onChange={(event) => setFormState((state) => ({ ...state, changePct: event.target.value }))}
+                onChange={(event) =>
+                  setFormState((state) => ({
+                    ...state,
+                    changePct: event.target.value,
+                  }))
+                }
                 inputMode="decimal"
                 placeholder="1.25"
               />
@@ -266,10 +324,16 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className={cn(header.column.id === "select" && "w-12")}>
+                  <TableHead
+                    key={header.id}
+                    className={cn(header.column.id === "select" && "w-12")}
+                  >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -278,17 +342,26 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-sm text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-muted-foreground h-24 text-center text-sm"
+                >
                   No quotes match your filters yet.
                 </TableCell>
               </TableRow>
@@ -296,15 +369,26 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-between text-xs">
         <div>
-          Showing {table.getPaginationRowModel().rows.length} of {table.getFilteredRowModel().rows.length} quotes
+          Showing {table.getPaginationRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} quotes
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
             Previous
           </Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
             Next
           </Button>
         </div>

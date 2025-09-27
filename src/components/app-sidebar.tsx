@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 type SidebarNavItem = {
   title: string;
@@ -46,13 +47,28 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   };
 }
 
-export function AppSidebar({ orgName, navMain, navSecondary, resources, user, ...props }: AppSidebarProps) {
+export function AppSidebar({
+  orgName,
+  navMain,
+  navSecondary,
+  resources,
+  user,
+  className,
+  ...props
+}: AppSidebarProps) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar
+      collapsible="offcanvas"
+      className={cn("border-border/60 bg-sidebar border-r", className)}
+      {...props}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <Link href="/dashboard" className="flex items-center gap-2">
                 <ArrowUpCircleIcon className="h-5 w-5" />
                 <span className="text-base font-semibold">{orgName}</span>
