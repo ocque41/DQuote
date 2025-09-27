@@ -5,7 +5,7 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 ## Architecture Overview
 - **Next.js 15 App Router** with server components, route groups for marketing vs. application surfaces, and Route Handlers for APIs.
 - **Prisma** data model targeting Neon Postgres (manual SQL migration generated via `prisma migrate diff`).
-- **NextAuth** credential-based auth with middleware-protected `/app` and `/admin` routes tied to organization membership.
+- **Neon Auth (Stack)** with App Router provider + handler, syncing users into `neon_auth.users_sync` and gating `/app` + `/admin` via middleware and server utilities.
 - **React Query + Server Actions** for optimistic selection updates and analytics logging.
 - **Stripe Checkout** (App Router handler) for deposit payments.
 - **shadcn/ui** components sourced from a custom local registry (`registry/*.json`).
@@ -24,7 +24,7 @@ The project already includes the core libraries required for Sprint 0. Key packa
 ## Getting Started
 ```bash
 pnpm install
-cp .env.example .env.local # populate with Neon, NextAuth, Blob, and Stripe credentials
+cp .env.example .env.local # populate with Neon Auth keys, Neon database URLs, Blob, and Stripe credentials
 pnpm dev
 # Validate the production build locally before deploying
 pnpm build
@@ -33,13 +33,12 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
 
-Authenticate at `/app/sign-in` using the seeded credentials (`founder@aurora.events` / `dquote-demo`). The first authenticated user is automatically linked to the seeded Aurora Events org with admin permissions so you can explore the dashboard immediately.
+Create or authenticate a Neon Auth user at `/app/sign-in` (or `/handler/sign-up`). The first signed-in account is automatically linked to the seeded Aurora Events org with admin permissions so you can explore the dashboard immediately.
 
 ### Environment Variables
 `.env.example` documents the required configuration:
 - `DATABASE_URL` / `DIRECT_URL`: Neon Postgres connection strings (use `DIRECT_URL` for migrations that need an unpooled connection).
-- `NEXTAUTH_URL`, `NEXTAUTH_SECRET`: Required for NextAuth session management.
-- `BLOB_READ_WRITE_TOKEN`: Server token for uploading generated PDFs to Vercel Blob.
+- `NEXT_PUBLIC_STACK_PROJECT_ID`, `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`: Neon Auth (Stack) project + API keys used by the Next.js provider, middleware, and handler.
 - `NEXT_PUBLIC_APP_URL`: Base URL for success/cancel redirects.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - `BLOB_READ_WRITE_TOKEN`: Server-side token that enables uploads to Vercel Blob storage.
@@ -66,10 +65,15 @@ Authenticate at `/app/sign-in` using the seeded credentials (`founder@aurora.eve
 
 > **Note:** Prisma warns that the `package.json#prisma` config is deprecated. For Neon deployments, you can move the `seed` command into a `prisma.config.ts` or Vercel build step when ready.
 
-## NextAuth & Neon Notes
-- The seed script provisions a demo administrator (`founder@aurora.events` / `dquote-demo`) with a bcrypt-hashed password so you can explore the dashboard immediately. Update or replace this account before sharing a deployed instance.
-- When deploying to Neon, create both pooled (`DATABASE_URL`) and direct (`DIRECT_URL`) connection strings per the [Prisma + Neon guide](https://www.prisma.io/docs/guides/other/neon), and point migrations at the direct connection to avoid pool limits.
+## Neon Auth Notes
+- Enable Neon Auth (beta) for your Neon project and copy the **Next.js** keys into `.env.local` / Vercel (`NEXT_PUBLIC_STACK_PROJECT_ID`, `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`).
+- Prisma exposes `neon_auth.users_sync` via the `NeonAuthUser` model. The first authenticated account automatically seeds an `OrgMember` linked to the Aurora Events org; run `SELECT id, email FROM neon_auth.users_sync ORDER BY created_at DESC LIMIT 5;` in Neon to verify new sign-ups.
+- The default Stack routes live under `/handler/[...stack]` (sign-in, sign-up, sign-out). Configure the "After sign-in" target in the Neon Auth dashboard to `/app` so contributors land on the internal workspace after authentication.
 - Generate a Vercel Blob read/write token (`BLOB_READ_WRITE_TOKEN`) in the Vercel dashboard and scope it to the bucket where proposal receipts should live.
+
+### Optional: Neon RLS (JWT/JWKS)
+- Neon Auth can issue JWTs signed via JWKS; once you’re ready to expose the database directly, enable RLS in the Neon console and attach row policies that compare `OrgMember.userId` (or `neon_auth.users_sync.id`) against the JWT subject.
+- Keep Prisma access server-side for v0; when RLS is active ensure any HTTP APIs include the Neon-issued `Authorization` header so row checks succeed.
 
 ## Stripe Integration
 - Configure test keys in `.env.local` and ensure `NEXT_PUBLIC_APP_URL` reflects your dev domain.
@@ -189,7 +193,7 @@ registry/                # Custom shadcn registry items
 - Stripe Checkout requires valid test keys; use Stripe CLI or dashboard to inspect sessions.
 
 ## Next Steps
-- Layer NextAuth-backed role management and invitation flows so additional org members can join without manual seeding.
+- Layer Neon Auth-backed role management and invitation flows so additional org members can join without manual seeding.
 - Expand the pricing engine with time-bound or stacked promotions to cover seasonal incentives.
 - Capture webhook updates for Stripe refunds/cancellations and surface the state change inside the proposal runtime.
 - Harden Vercel Blob retention policies (versioning, lifecycle rules) to support long-lived receipt archives in production.

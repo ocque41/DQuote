@@ -1,3 +1,26 @@
+# SPRINT 13 PLAN
+
+## Item 1: Neon Auth integration & UI shell
+- Replace legacy Supabase/NextAuth wiring with Neon Auth Stack provider, handler routes, and authenticated header controls across the Next.js app router.
+
+### Acceptance Criteria
+- [x] Root layout mounts `StackProvider` with env-driven keys and `/handler/[...stack]` route exposes Neon Auth handler endpoints.
+- [x] Authenticated header renders `UserButton` sourced from Neon Auth SDK while legacy Supabase/NextAuth client code is removed.
+
+## Item 2: Session enforcement & Prisma user mapping
+- Introduce shared server utilities that validate Neon Auth sessions, gate `/app/**` and `/admin/**` routes, and expose synced users through Prisma’s multi-schema support.
+
+### Acceptance Criteria
+- [x] Navigating to `/app` or `/admin` without a session redirects to the Neon Auth sign-in experience, while signed-in users render successfully.
+- [x] Prisma schema defines a `NeonAuthUser` model mapped to `neon_auth.users_sync`, and domain relations reference it without migration conflicts.
+
+## Item 3: Environment & documentation updates
+- Document required Neon Auth environment variables, optional Neon RLS hardening steps, and ensure `.env.example`/README match the new setup instructions.
+
+### Acceptance Criteria
+- [x] README enumerates Neon Auth setup, including enabling the beta, configuring keys, and referencing the new sign-in routes with verification steps.
+- [x] `.env.example` lists Neon Auth variables (`NEXT_PUBLIC_STACK_PROJECT_ID`, `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`) alongside Neon database URLs.
+
 # SPRINT 10 PLAN
 
 ## Item 1: Auth & storage migration

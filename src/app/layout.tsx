@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import { StackProvider } from "@stackframe/stack";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { QueryProvider } from "@/components/providers/query-provider";
-import { AuthSessionProvider } from "@/components/providers/session-provider";
-import { auth } from "@auth";
+import { stackClientApp } from "@/stack/client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,19 +21,17 @@ export const metadata: Metadata = {
   description: "Interactive proposal decks with live pricing, portfolio proofs, and instant acceptance.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" className="bg-background">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}>
-        <AuthSessionProvider session={session}>
+        <StackProvider app={stackClientApp}>
           <QueryProvider>{children}</QueryProvider>
-        </AuthSessionProvider>
+        </StackProvider>
       </body>
     </html>
   );
