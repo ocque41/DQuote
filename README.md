@@ -165,17 +165,19 @@ registry/                # Custom shadcn registry items
 - `POST /api/stripe/checkout` — create a Stripe Checkout Session for the stored deposit, persist the session/payment IDs, and return the hosted payment URL.
 - `POST /api/stripe/webhook` — validate Stripe signatures and mark quotes as paid on `checkout.session.completed`, emitting `PAY` events even if the viewer doesn’t return to the proposal.
 - `POST /api/blob/upload` — accept a `multipart/form-data` upload with a `file` field, store it in Vercel Blob under the `dquote/` prefix, and respond with the public URL.
+- `POST /api/avatar/upload` — stream the raw request body to Vercel Blob using the provided `filename` query parameter and return the blob metadata.
 
 ### Verifying Blob uploads locally
 1. Ensure `BLOB_READ_WRITE_TOKEN` is present in `.env.local` (copy it from Vercel > Storage > Blob) and restart `pnpm dev` if needed.
-2. Upload a sample file via curl:
+2. Visit `http://localhost:3000/avatar/upload` while `pnpm dev` is running, choose an image (≤4.5 MB, server upload limit), and submit the form to verify the server-upload flow. The resulting blob URL should render as a clickable link.
+3. Upload a sample file via curl:
    ```bash
    curl -X POST "http://localhost:3000/api/blob/upload" \
      -H "Accept: application/json" \
      -F "file=@README.md"
    ```
    The response contains `{ "url": "https://..." }`. Open the URL in a browser to confirm it is publicly reachable.
-3. Optionally list stored blobs via the CLI (requires `vercel`):
+4. Optionally list stored blobs via the CLI (requires `vercel`):
    ```bash
    vercel blob list --prefix dquote/
    ```
