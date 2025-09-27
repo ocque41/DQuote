@@ -124,6 +124,18 @@ Need to pull these components into another project with the familiar registry sy
    `HTTP_PROXY` / `HTTPS_PROXY`, set `NO_PROXY=localhost,127.0.0.1` (and clear the
    proxy variables) while running the command so the CLI can talk to the local server.
 
+### Installed blocks & workflow
+
+- `npx shadcn@latest add login-04` & `dashboard-01` establish the Neon Auth sign-in flow and the authenticated sidebar shell.
+- The **Quote Terminal** extends the Tasks example (`/quotes`) and lives under `src/app/quotes/**` with shared UI in
+  `src/components/quote-*.tsx`.
+- Token tweaks for the green brand live in `src/app/globals.css` (HSL variables) and `tailwind.config.ts` (CSS variable mapping).
+- When you add another block, run the CLI command from the project root, review the generated files, and map new imports to the
+  green palette via CSS variables—avoid hard-coding colors.
+
+If charts appear grayscale in a fork or staging deploy, ensure the `--chart-*` tokens in `globals.css` propagate to the element
+and that `@/components/ui/chart.tsx` receives the right `ChartConfig` colors (we pass `hsl(var(--chart-X))`).
+
 ## Available Scripts
 - `pnpm dev` — start Next.js in development mode.
 - `pnpm build` / `pnpm start` — production build & run.
@@ -152,9 +164,10 @@ Need to pull these components into another project with the familiar registry sy
 
 ## Project Structure Highlights
 ```
-src/app/page.tsx         # Marketing landing page
-src/app/app/(authenticated)  # Authenticated dashboard surfaces
-src/app/app/(public)         # Auth entry (sign-in)
+src/app/page.tsx         # Auth-aware redirect to /dashboard or /login
+src/app/(auth)           # Neon Auth login/signup screens (login-04 block)
+src/app/dashboard        # Dashboard home (dashboard-01 block)
+src/app/quotes           # Quote Terminal data grid + filters
 src/app/api              # Route Handlers (pricing, proposals, accept, stripe)
 src/components/proposal  # Client runtime UI
 prisma/                  # Schema, migrations, seed data

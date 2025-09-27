@@ -28,7 +28,7 @@ export async function getViewerContext(currentUser?: StackUser): Promise<ViewerC
   let stackUser = currentUser;
 
   if (!stackUser) {
-    const sessionResult = await requireUser({ redirectTo: "/handler/sign-in" });
+    const sessionResult = await requireUser();
 
     if ("redirect" in sessionResult) {
       return null;
