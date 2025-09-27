@@ -34,6 +34,10 @@ pnpm dev
 pnpm build
 ```
 
+> **Heads up:** `pnpm build` now runs `prisma migrate deploy` before `next build`.
+> Make sure `DATABASE_URL` (and `DIRECT_URL` when required) point at the database
+> you intend to migrate before running the command locally or in CI.
+
 Visit `http://localhost:3000/` for the marketing site, `/app` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
@@ -57,7 +61,7 @@ Create or authenticate a Neon Auth user at `/login` (or `/signup`). The first si
 
 ### Regenerate the Prisma Client
 
-Run `pnpm prisma generate` whenever you edit `prisma/schema.prisma` so that the typed client picks up new models like `OrgMember`. The `prebuild` script now executes this command automatically, guaranteeing Vercel (and local) production builds refresh the generated client before `next build` runs.
+Run `pnpm prisma generate` whenever you edit `prisma/schema.prisma` so that the typed client picks up new models like `OrgMember`. The `prebuild` script now executes this command automatically, guaranteeing Vercel (and local) production builds refresh the generated client before `prisma migrate deploy` and `next build` run.
 
 1. **Generate SQL migration (manual review first):**
    ```bash
@@ -159,7 +163,7 @@ and that `@/components/ui/chart.tsx` receives the right `ChartConfig` colors (we
 ## Available Scripts
 
 - `pnpm dev` — start Next.js in development mode.
-- `pnpm build` / `pnpm start` — production build & run.
+- `pnpm build` / `pnpm start` — production build & run (`pnpm build` runs `prisma migrate deploy` first).
 - `pnpm lint` — lint with Next.js config.
 - `pnpm format` — run Prettier with the Tailwind plugin on src and markdown docs.
 - `pnpm test:pricing` — execute the pricing rules engine unit tests via `node:test`.

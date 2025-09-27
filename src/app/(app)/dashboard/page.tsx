@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { requireUser } from "@/auth/requireUser";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
@@ -22,7 +23,40 @@ export default async function DashboardPage() {
     redirect(session.redirect);
   }
 
-  const viewer = await getViewerContext(session.user);
+  let viewer: Awaited<ReturnType<typeof getViewerContext>> = null;
+  let schemaMissing = false;
+
+  try {
+    viewer = await getViewerContext(session.user);
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2021"
+    ) {
+      schemaMissing = true;
+      console.error(
+        "Dashboard OrgMember lookup failed because migrations have not been applied. Run `prisma migrate deploy` against the production database and redeploy.",
+        error
+      );
+    } else {
+      throw error;
+    }
+  }
+
+  if (schemaMissing) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="text-2xl font-semibold">Database migrations required</h1>
+        <p className="text-muted-foreground max-w-2xl">
+          The dashboard needs the <code>OrgMember</code> table before it can load.
+          Deploy the latest Prisma migrations to your Neon production database by
+          running <code>prisma migrate deploy</code> (ensure Vercel&apos;s
+          <code>DATABASE_URL</code> targets the correct branch) and redeploy this
+          app.
+        </p>
+      </div>
+    );
+  }
 
   if (!viewer) {
     redirect("/login?redirect=/dashboard");

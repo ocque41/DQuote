@@ -1,3 +1,15 @@
+# SPRINT 18 PLAN
+
+## Item 1: Fix OrgMember P2021 in production
+
+- Verify database target configuration and confirm Prisma migrations for `OrgMember`/`NeonAuthUser` are pending in production.
+- Apply the migrations during the build pipeline and document the operational checks in the implementation report.
+
+### Acceptance Criteria
+
+- [x] Build pipeline runs `prisma migrate deploy` before `next build`, ensuring the Prisma schema is applied in production.
+- [x] IMPLEMENTATION REPORT captures database target, applied migrations, and table existence checks (or recorded blockers).
+
 # SPRINT 17 PLAN
 
 ## Item 1: Restore public marketing experience

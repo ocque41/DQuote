@@ -1,5 +1,10 @@
 # WORKLOG
 
+## 2025-02-14 — Prisma migration guard for dashboard
+
+- Added `prisma migrate deploy` to the `pnpm build` pipeline so Neon production migrations apply during deploys.
+- Documented the build prerequisite in the README and added a dashboard fallback when the `OrgMember` table is missing.
+
 ## Planned File Touches
 
 - PLAN.md
