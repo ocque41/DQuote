@@ -1,3 +1,13 @@
+# SPRINT 16 PLAN
+
+## Item 1: Restore Prisma org member client typing
+- Ensure the generated Prisma Client exposes the `orgMember` delegate used in `src/server/auth.ts` so builds succeed on Vercel.
+- Capture regeneration/documentation steps so contributors can reproduce the fix locally.
+
+### Acceptance Criteria
+- [x] `npm run build` completes without the `Property 'orgMember' does not exist on type 'PrismaClient'` error.
+- [x] README runbook documents regenerating the Prisma client when schema models change, including the command executed in this fix.
+
 # SPRINT 15 PLAN
 
 ## Item 1: Sidebar navigation typing compatibility

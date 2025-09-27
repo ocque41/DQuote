@@ -47,6 +47,9 @@ Create or authenticate a Neon Auth user at `/app/sign-in` (or `/handler/sign-up`
 - `ENCRYPTION_KEY`: Reserved for future secure payload handling (32 chars).
 
 ## Database & Prisma Workflow
+### Regenerate the Prisma Client
+Run `pnpm prisma generate` whenever you edit `prisma/schema.prisma` so that the typed client picks up new models like `OrgMember`. The `prebuild` script now executes this command automatically, guaranteeing Vercel (and local) production builds refresh the generated client before `next build` runs.
+
 1. **Generate SQL migration (manual review first):**
    ```bash
    # Requires a running Postgres database when using migrate dev
