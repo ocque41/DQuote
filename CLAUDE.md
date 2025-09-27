@@ -12,16 +12,18 @@ DQuote is an interactive proposal experience that blends CPQ (Configure, Price, 
 
 ### Essential Commands
 - `pnpm dev` - Start development server
-- `pnpm build` - Production build (must pass before deployment)
+- `pnpm build` - Production build with Prisma client generation
 - `pnpm lint` - Lint code with Next.js config
 - `pnpm format` - Format code with Prettier and Tailwind plugin
 - `pnpm test:pricing` - Run pricing engine unit tests
 
 ### Database & Prisma
 - `pnpm run migrate:create -- --name <name>` - Generate new migration (requires DIRECT_URL)
-- `pnpm run migrate:apply` - Apply pending migrations
+- `pnpm run migrate:apply` - Apply pending migrations (development only)
 - `pnpm exec prisma db seed` - Seed demo data
 - `pnpm studio` - Open Prisma Studio
+
+**Note**: Migrations are NOT automatically applied during build. For production deployments, run migrations separately before deploying.
 
 ### Component System
 - `./scripts/add-ui.sh <component>` - Install shadcn/ui component from local registry
