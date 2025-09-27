@@ -9,7 +9,7 @@ export default async function ProposalsIndexPage() {
   const viewer = await getViewerContext();
 
   if (!viewer) {
-    redirect("/app/sign-in");
+    redirect("/handler/sign-in");
   }
 
   const proposals = await prisma.proposal.findMany({

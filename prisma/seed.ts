@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import bcrypt from "bcryptjs";
-
 import {
   PrismaClient,
   Prisma,
@@ -23,7 +21,6 @@ async function main() {
   await prisma.asset.deleteMany();
   await prisma.catalogItem.deleteMany();
   await prisma.client.deleteMany();
-  await prisma.user.deleteMany();
   await prisma.proposalTemplate.deleteMany();
   await prisma.pricingRule.deleteMany();
   await prisma.org.deleteMany();
@@ -32,20 +29,6 @@ async function main() {
     data: {
       name: "Aurora Events",
       slug: "aurora-events"
-    }
-  });
-
-  const passwordHash = await bcrypt.hash("dquote-demo", 10);
-
-  await prisma.user.create({
-    data: {
-      id: "11111111-1111-1111-1111-111111111111",
-      orgId: org.id,
-      email: "founder@aurora.events",
-      name: "Avery Rivera",
-      role: "admin",
-      passwordHash,
-      emailVerified: new Date()
     }
   });
 

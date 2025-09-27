@@ -25,7 +25,7 @@ export default async function AppHomePage() {
   const viewer = await getViewerContext();
 
   if (!viewer) {
-    redirect("/app/sign-in");
+    redirect("/handler/sign-in");
   }
 
   const orgId = viewer.org.id;
