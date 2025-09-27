@@ -35,7 +35,13 @@ export const {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email.toLowerCase() }
+          where: { email: parsed.data.email.toLowerCase() },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            passwordHash: true
+          }
         });
 
         if (!user?.passwordHash) {

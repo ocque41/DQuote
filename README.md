@@ -26,6 +26,8 @@ The project already includes the core libraries required for Sprint 0. Key packa
 pnpm install
 cp .env.example .env.local # populate with Neon, NextAuth, Blob, and Stripe credentials
 pnpm dev
+# Validate the production build locally before deploying
+pnpm build
 ```
 Visit `http://localhost:3000/` for the marketing site, `/app` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
 
@@ -146,7 +148,7 @@ Need to pull these components into another project with the familiar registry sy
 
 ## Project Structure Highlights
 ```
-src/app/(marketing)      # Marketing site
+src/app/page.tsx         # Marketing landing page
 src/app/app/(authenticated)  # Authenticated dashboard surfaces
 src/app/app/(public)         # Auth entry (sign-in)
 src/app/api              # Route Handlers (pricing, proposals, accept, stripe)

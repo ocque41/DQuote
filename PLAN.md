@@ -185,6 +185,16 @@
 - [x] README enumerates final setup/run commands, environment variables, and notes on Stripe webhooks/Supabase usage.
 - [x] `.env.example` contains placeholders for all required secrets and optional configs referenced in documentation.
 
+# SPRINT 12 PLAN
+
+## Item 1: Restore Vercel production build
+- Resolve Tailwind utility errors introduced by the Tailwind v4 migration and ensure design tokens compile without `border-border` failures.
+- Address the missing `(marketing)` route artifact so the Next.js build completes without ENOENT crashes in Vercel.
+
+### Acceptance Criteria
+- [x] `npm run build` finishes locally with no Tailwind utility errors or missing-manifest exceptions, matching Vercel expectations.
+- [x] README documents the verified build command so contributors can reproduce the fix.
+
 # SPRINT 11 PLAN
 
 ## Item 1: Finalize Neon-auth storage migration
