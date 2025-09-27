@@ -4,7 +4,7 @@ import * as React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from "lucide-react";
 
-import type { Quote } from "@/app/quotes/schema";
+import type { Quote } from "@/app/(app)/quotes/schema";
 import { QuoteActions } from "@/components/quote-actions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";

@@ -12,8 +12,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import type { Quote } from "@/app/quotes/schema";
-import { columns } from "@/app/quotes/columns";
+import type { Quote } from "@/app/(app)/quotes/schema";
+import { columns } from "@/app/(app)/quotes/columns";
 import { QuoteFilters } from "@/components/quote-filters";
 import { Button } from "@/components/ui/button";
 import {

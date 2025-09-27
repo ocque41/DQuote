@@ -14,6 +14,7 @@ DQuote is an interactive proposal experience that blends CPQ (Configure, Price, 
 - `pnpm dev` - Start development server
 - `pnpm build` - Production build (must pass before deployment)
 - `pnpm lint` - Lint code with Next.js config
+- `pnpm format` - Format code with Prettier and Tailwind plugin
 - `pnpm test:pricing` - Run pricing engine unit tests
 
 ### Database & Prisma
@@ -32,12 +33,13 @@ DQuote is an interactive proposal experience that blends CPQ (Configure, Price, 
 - **Next.js 15** with App Router
 - **React 19** with TypeScript
 - **Prisma** ORM with PostgreSQL (Neon)
-- **NextAuth v5** for authentication
+- **Neon Auth (Stack)** for authentication
 - **shadcn/ui** component system with custom registry
 - **Tailwind CSS v4** with design tokens
 
 ### Key Dependencies
-- **Database**: `@prisma/client`, `@auth/prisma-adapter`
+- **Database**: `@prisma/client`
+- **Authentication**: `@stackframe/stack`
 - **UI Components**: Full Radix UI suite (`@radix-ui/react-*`)
 - **Forms**: `react-hook-form`, `@hookform/resolvers`, `zod`
 - **Data Fetching**: `@tanstack/react-query`
@@ -73,11 +75,11 @@ src/app/
 - **proposals/[shareId]**: Public proposal runtime pages
 
 ### Authentication & Authorization
-- **NextAuth v5** with Prisma adapter
-- **Credential-based** authentication (bcrypt password hashing)
+- **Neon Auth (Stack)** with Next.js provider and Prisma integration
+- **Multi-provider** authentication with credential and OAuth options
 - **Middleware Protection**: Routes under `/app/*` and `/admin/*` (see `middleware.ts`)
 - **Organization-based**: Multi-tenant with org-scoped data access
-- **Session Strategy**: Database sessions with role information
+- **Session Strategy**: Stack-managed sessions with role information
 
 ### Data Model (Prisma Schema)
 Key entities:
@@ -148,7 +150,7 @@ Complex rule-based pricing system with:
 - Full TypeScript coverage
 - Prisma-generated types
 - Zod schemas for API validation
-- NextAuth session typing extensions
+- Stack Auth session typing extensions
 
 ### 3. Real-time Updates
 - Optimistic UI updates for selections
@@ -179,11 +181,12 @@ Complex rule-based pricing system with:
 
 ### Required Environment Variables
 - `DATABASE_URL` / `DIRECT_URL`: Neon PostgreSQL connections
-- `NEXTAUTH_URL` / `NEXTAUTH_SECRET`: NextAuth configuration
+- `NEXT_PUBLIC_STACK_PROJECT_ID` / `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY` / `STACK_SECRET_SERVER_KEY`: Neon Auth (Stack) configuration
+- `NEXT_PUBLIC_APP_URL`: Base URL for redirects
 - `BLOB_READ_WRITE_TOKEN`: Vercel Blob storage access
 - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`: Payment processing
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Client-side Stripe key
-- SMTP configuration for email receipts
+- SMTP configuration for email receipts (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`)
 - `ENCRYPTION_KEY`: Future secure payload handling
 
 ### Setup Steps
@@ -193,7 +196,7 @@ pnpm install
 
 # Set up environment
 cp .env.example .env.local
-# Configure: DATABASE_URL, NEXTAUTH_SECRET, STRIPE keys, BLOB_READ_WRITE_TOKEN
+# Configure: DATABASE_URL, Neon Auth (Stack) keys, STRIPE keys, BLOB_READ_WRITE_TOKEN
 
 # Database setup
 pnpm run migrate:apply
