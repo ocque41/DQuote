@@ -1,5 +1,6 @@
+import { requireUser } from "@/auth/requireUser";
 import { prisma } from "@/server/prisma";
-import { auth } from "@auth";
+import { getStackServerApp } from "@/stack/server";
 
 export interface ViewerContext {
   sessionUser: {
@@ -21,65 +22,90 @@ export interface ViewerContext {
   };
 }
 
-export async function getViewerContext(): Promise<ViewerContext | null> {
-  const session = await auth();
+type StackServerAppInstance = ReturnType<typeof getStackServerApp>;
+type StackUser = Exclude<Awaited<ReturnType<StackServerAppInstance["getUser"]>>, null>;
 
-  if (!session?.user?.email) {
+export async function getViewerContext(currentUser?: StackUser): Promise<ViewerContext | null> {
+  let stackUser = currentUser;
+
+  if (!stackUser) {
+    const sessionResult = await requireUser({ redirectTo: "/handler/sign-in" });
+
+    if ("redirect" in sessionResult) {
+      return null;
+    }
+
+    stackUser = sessionResult.user;
+  }
+
+  const email = stackUser.primaryEmail?.toLowerCase();
+
+  if (!email) {
     return null;
   }
 
-  const email = session.user.email.toLowerCase();
+  const displayName = stackUser.displayName ?? email;
 
-  let dbUser = await prisma.user.findUnique({
-    where: { email },
+  let member = await prisma.orgMember.findFirst({
+    where: { userId: stackUser.id },
     include: { org: true }
   });
 
-  if (!dbUser || !dbUser.org) {
+  if (!member) {
     const fallbackOrg = await prisma.org.findFirst({ orderBy: { createdAt: "asc" } });
     if (!fallbackOrg) {
       return null;
     }
-    const displayName = session.user.name ?? dbUser?.name ?? email;
-    dbUser = await prisma.user.upsert({
-      where: { email },
-      create: {
+
+    member = await prisma.orgMember.create({
+      data: {
         orgId: fallbackOrg.id,
+        userId: stackUser.id,
         email,
         name: displayName,
-        role: dbUser?.role ?? "admin"
-      },
-      update: {
-        orgId: fallbackOrg.id,
-        email,
-        name: displayName,
-        role: dbUser?.role ?? "admin"
+        role: "admin"
       },
       include: { org: true }
     });
+  } else {
+    const updates: Record<string, string | null> = {};
+    if (member.email !== email) {
+      updates.email = email;
+    }
+    if (member.name !== displayName) {
+      updates.name = displayName;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      member = await prisma.orgMember.update({
+        where: { id: member.id },
+        data: updates,
+        include: { org: true }
+      });
+    }
   }
 
-  if (!dbUser?.org) {
+  if (!member?.org) {
     return null;
   }
 
   return {
     sessionUser: {
-      id: dbUser.id,
-      email: dbUser.email,
-      name: dbUser.name,
-      role: dbUser.role ?? null
+      id: stackUser.id,
+      email,
+      name: stackUser.displayName,
+      role: member.role ?? null
     },
     orgUser: {
-      id: dbUser.id,
-      email: dbUser.email,
-      name: dbUser.name,
-      role: dbUser.role ?? null
+      id: member.id,
+      email: member.email,
+      name: member.name,
+      role: member.role ?? null
     },
     org: {
-      id: dbUser.org.id,
-      name: dbUser.org.name,
-      slug: dbUser.org.slug
+      id: member.org.id,
+      name: member.org.name,
+      slug: member.org.slug
     }
   };
 }

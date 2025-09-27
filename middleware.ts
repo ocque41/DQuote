@@ -1,17 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-import { auth } from "@auth";
+import { createStackServerApp } from "@/stack/server";
 
 const PUBLIC_ROUTES = new Set(["/app/sign-in"]);
 
-export default auth((request) => {
+export async function middleware(request: NextRequest) {
   if (PUBLIC_ROUTES.has(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
 
-  if (!request.auth) {
+  let user = null;
+
+  try {
+    const stackApp = createStackServerApp(request);
+    user = await stackApp.getUser({ or: "return-null", tokenStore: request });
+  } catch (error) {
+    console.error("Neon Auth middleware check failed", error);
+  }
+
+  if (!user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/app/sign-in";
+    redirectUrl.pathname = "/handler/sign-in";
     if (!redirectUrl.searchParams.has("redirect")) {
       redirectUrl.searchParams.set("redirect", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     }
@@ -19,7 +28,7 @@ export default auth((request) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/app/:path*", "/admin/:path*"]

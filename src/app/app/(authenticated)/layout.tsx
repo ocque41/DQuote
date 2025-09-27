@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { UserButton } from "@stackframe/stack";
+
+import { requireUser } from "@/auth/requireUser";
 import { getViewerContext } from "@/server/auth";
 
 const navLinks = [
@@ -11,10 +13,16 @@ const navLinks = [
 ];
 
 export default async function AuthenticatedAppLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await getViewerContext();
+  const session = await requireUser();
+
+  if ("redirect" in session) {
+    redirect(session.redirect);
+  }
+
+  const viewer = await getViewerContext(session.user);
 
   if (!viewer) {
-    redirect("/app/sign-in");
+    redirect("/handler/sign-in");
   }
 
   const displayName = viewer.orgUser.name ?? viewer.sessionUser.email ?? "Account";
@@ -38,7 +46,7 @@ export default async function AuthenticatedAppLayout({ children }: { children: R
               <p className="text-sm font-semibold leading-tight">{displayName}</p>
               <p className="text-xs text-muted-foreground">{viewer.org.name}</p>
             </div>
-            <SignOutButton />
+            <UserButton />
           </div>
         </div>
       </header>

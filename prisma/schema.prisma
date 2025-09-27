@@ -6,6 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  schemas   = ["public", "neon_auth"]
 }
 
 enum SlideType {
@@ -15,11 +16,15 @@ enum SlideType {
   PORTFOLIO
   REVIEW
   ACCEPT
+
+  @@schema("public")
 }
 
 enum OptionKind {
   ITEM
   BUNDLE
+
+  @@schema("public")
 }
 
 enum EventType {
@@ -29,6 +34,8 @@ enum EventType {
   ACCEPT
   PAY
   PORTFOLIO_OPEN
+
+  @@schema("public")
 }
 
 enum ProposalStatus {
@@ -38,13 +45,29 @@ enum ProposalStatus {
   ACCEPTED
   DECLINED
   EXPIRED
+
+  @@schema("public")
+}
+
+model NeonAuthUser {
+  id         String   @id @db.Text
+  email      String?  @map("email")
+  name       String?  @map("name")
+  createdAt  DateTime? @map("created_at")
+  updatedAt  DateTime? @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  rawJson    Json?    @map("raw_json")
+  members    OrgMember[]
+
+  @@schema("neon_auth")
+  @@map("users_sync")
 }
 
 model Org {
   id        String             @id @default(uuid())
   name      String
   slug      String             @unique
-  users     User[]
+  members   OrgMember[]
   clients   Client[]
   catalog   CatalogItem[]
   templates ProposalTemplate[]
@@ -53,22 +76,24 @@ model Org {
   rules     PricingRule[]
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
+
+  @@schema("public")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  orgId     String?
-  org       Org?     @relation(fields: [orgId], references: [id])
-  email     String   @unique
+model OrgMember {
+  id        String        @id @default(uuid())
+  orgId     String
+  org       Org           @relation(fields: [orgId], references: [id])
+  userId    String        @db.Text
+  user      NeonAuthUser  @relation(fields: [userId], references: [id], onDelete: NoAction)
+  email     String
   name      String?
-  role      String? // "admin" | "editor" | "viewer"
-  passwordHash String?
-  emailVerified DateTime?
-  image     String?
-  accounts  Account[]
-  sessions  Session[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([userId, orgId])
+  @@schema("public")
 }
 
 model Client {
@@ -83,6 +108,8 @@ model Client {
   proposals Proposal[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@schema("public")
 }
 
 model CatalogItem {
@@ -101,6 +128,8 @@ model CatalogItem {
   options     Option[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@schema("public")
 }
 
 model ProposalTemplate {
@@ -113,6 +142,8 @@ model ProposalTemplate {
   slides      Slide[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@schema("public")
 }
 
 model Slide {
@@ -127,6 +158,8 @@ model Slide {
   position   Int
   meta       Json?
   options    Option[]
+
+  @@schema("public")
 }
 
 model Option {
@@ -145,6 +178,8 @@ model Option {
   maxQty        Int?
   defaultQty    Int? // null => 1
   selections    Selection[]
+
+  @@schema("public")
 }
 
 model PricingRule {
@@ -155,6 +190,8 @@ model PricingRule {
   type      String // "discount_fixed" | "discount_pct" | "tax_pct" | "require" | "mutex"
   config    Json // payload for applying rule & dependencies
   createdAt DateTime @default(now())
+
+  @@schema("public")
 }
 
 model Proposal {
@@ -175,6 +212,8 @@ model Proposal {
   createdBy  String?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
+
+  @@schema("public")
 }
 
 model Selection {
@@ -186,6 +225,8 @@ model Selection {
   qty        Int      @default(1)
 
   @@unique([proposalId, optionId])
+
+  @@schema("public")
 }
 
 model Quote {
@@ -212,6 +253,8 @@ model Quote {
   stripePaymentIntentId   String?
   depositPaidAt           DateTime?
   createdAt   DateTime @default(now())
+
+  @@schema("public")
 }
 
 model Asset {
@@ -225,6 +268,8 @@ model Asset {
   url           String
   tags          String[]
   createdAt     DateTime     @default(now())
+
+  @@schema("public")
 }
 
 model Event {
@@ -234,38 +279,7 @@ model Event {
   type       EventType
   data       Json?
   createdAt  DateTime  @default(now())
+
+  @@schema("public")
 }
 
-model Account {
-  id                String  @id @default(uuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(uuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}

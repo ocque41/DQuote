@@ -32,7 +32,7 @@ export default async function AnalyticsPage() {
   const viewer = await getViewerContext();
 
   if (!viewer) {
-    redirect("/app/sign-in");
+    redirect("/handler/sign-in");
   }
 
   if (viewer.orgUser.role !== "admin") {
