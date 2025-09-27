@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import nodemailer from "nodemailer";
 
 interface SendReceiptEmailOptions {
@@ -13,7 +11,7 @@ interface SendReceiptEmailOptions {
   deposit: number;
   currency: string;
   receiptUrl?: string | null;
-  pdfPath?: string | null;
+  pdfAttachment?: { fileName: string; buffer: Buffer } | null;
   baseUrl: string;
 }
 
@@ -33,7 +31,7 @@ export async function sendReceiptEmail({
   deposit,
   currency,
   receiptUrl,
-  pdfPath,
+  pdfAttachment,
   baseUrl
 }: SendReceiptEmailOptions) {
   const host = resolveEnv("SMTP_HOST");
@@ -112,11 +110,11 @@ export async function sendReceiptEmail({
     <p>We’ll follow up shortly with the next steps.</p>
   `;
 
-  const attachments = pdfPath
+  const attachments = pdfAttachment
     ? [
         {
-          filename: path.basename(pdfPath),
-          path: pdfPath,
+          filename: pdfAttachment.fileName,
+          content: pdfAttachment.buffer,
           contentType: "application/pdf"
         }
       ]

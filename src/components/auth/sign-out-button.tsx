@@ -2,20 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { signOut } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 
 export function SignOutButton() {
-  const supabase = useSupabaseClient();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
-      await supabase.auth.signOut();
-      router.push("/app/sign-in");
+      const result = await signOut({ redirect: false, callbackUrl: "/app/sign-in" });
+      router.push(result?.url ?? "/app/sign-in");
       router.refresh();
     } finally {
       setIsLoading(false);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { signIn } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -21,7 +21,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function SignInForm({ redirectTo }: { redirectTo: string }) {
-  const supabase = useSupabaseClient();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const {
@@ -35,17 +34,21 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
 
   const onSubmit = async (values: FormValues) => {
     setError(null);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password
+    const email = values.email.toLowerCase();
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password: values.password,
+      callbackUrl: redirectTo
     });
 
-    if (signInError) {
-      setError(signInError.message);
+    if (result?.error) {
+      const message = result.error === "CredentialsSignin" ? "Invalid email or password" : result.error;
+      setError(message);
       return;
     }
 
-    router.push(redirectTo);
+    router.push(result?.url ?? redirectTo);
     router.refresh();
   };
 
@@ -54,7 +57,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2">
           <CardTitle>Sign in to DQuote</CardTitle>
-          <CardDescription>Use your Supabase credentials to access the proposal workspace.</CardDescription>
+          <CardDescription>Use your workspace credentials to access the proposal tools.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>

@@ -4,8 +4,8 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 
 ## Architecture Overview
 - **Next.js 15 App Router** with server components, route groups for marketing vs. application surfaces, and Route Handlers for APIs.
-- **Prisma** data model targeting Supabase Postgres (manual SQL migration generated via `prisma migrate diff`).
-- **Supabase Auth** with middleware-protected `/app` and `/admin` routes tied to organization membership.
+- **Prisma** data model targeting Neon Postgres (manual SQL migration generated via `prisma migrate diff`).
+- **NextAuth** credential-based auth with middleware-protected `/app` and `/admin` routes tied to organization membership.
 - **React Query + Server Actions** for optimistic selection updates and analytics logging.
 - **Stripe Checkout** (App Router handler) for deposit payments.
 - **shadcn/ui** components sourced from a custom local registry (`registry/*.json`).
@@ -24,25 +24,24 @@ The project already includes the core libraries required for Sprint 0. Key packa
 ## Getting Started
 ```bash
 pnpm install
-cp .env.example .env.local # populate with Supabase + Stripe credentials
+cp .env.example .env.local # populate with Neon, NextAuth, Blob, and Stripe credentials
 pnpm dev
 ```
 Visit `http://localhost:3000/` for the marketing site, `/app` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
 
-Authenticate at `/app/sign-in` using a Supabase email/password account. The first authenticated user is automatically linked to the seeded Aurora Events org with admin permissions so you can explore the dashboard immediately.
+Authenticate at `/app/sign-in` using the seeded credentials (`founder@aurora.events` / `dquote-demo`). The first authenticated user is automatically linked to the seeded Aurora Events org with admin permissions so you can explore the dashboard immediately.
 
 ### Environment Variables
 `.env.example` documents the required configuration:
-- `DATABASE_URL` / `DIRECT_URL`: Supabase Postgres connection strings.
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`: Helpful when wiring Supabase Auth or Row Level Security policies alongside Prisma.
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Exposed to the browser for Supabase Auth helpers.
+- `DATABASE_URL` / `DIRECT_URL`: Neon Postgres connection strings (use `DIRECT_URL` for migrations that need an unpooled connection).
+- `NEXTAUTH_URL`, `NEXTAUTH_SECRET`: Required for NextAuth session management.
+- `BLOB_READ_WRITE_TOKEN`: Server token for uploading generated PDFs to Vercel Blob.
 - `NEXT_PUBLIC_APP_URL`: Base URL for success/cancel redirects.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - `BLOB_READ_WRITE_TOKEN`: Server-side token that enables uploads to Vercel Blob storage.
 - `DEMO_PROPOSAL_SHARE_ID` (optional): Overrides the proposal used by the analytics dashboard (`dq-demo-aurora` by default).
-- `PDF_STORAGE_BUCKET` (optional): Target folder/S3 key prefix for generated receipt PDFs when deploying beyond local disk.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`: SMTP credentials for emailing receipt PDFs after acceptance.
 - `ENCRYPTION_KEY`: Reserved for future secure payload handling (32 chars).
 
@@ -53,7 +52,7 @@ Authenticate at `/app/sign-in` using a Supabase email/password account. The firs
    DIRECT_URL=... DATABASE_URL=... pnpm run migrate:create -- --name init
    ```
    The command writes a new folder under `prisma/migrations/` (e.g. `20250926194629_init/migration.sql`) without applying it so you can inspect the SQL before rollout.
-2. **Apply migrations locally or against Supabase:**
+2. **Apply migrations locally or against Neon/Postgres:**
    ```bash
    DIRECT_URL=... DATABASE_URL=... pnpm run migrate:apply
    ```
@@ -63,13 +62,12 @@ Authenticate at `/app/sign-in` using a Supabase email/password account. The firs
    ```
   The seed script inserts an org, catalog items (with portfolio tags), tagged assets, analytics events, and a proposal with the slide flow `INTRO → CHOICE_CORE → ADDONS → PORTFOLIO → REVIEW → ACCEPT` so you can exercise the interactive deck end-to-end.
 
-> **Note:** Prisma warns that the `package.json#prisma` config is deprecated. For Supabase deployment, you can move the `seed` command into a `prisma.config.ts` or Vercel build step when ready.
+> **Note:** Prisma warns that the `package.json#prisma` config is deprecated. For Neon deployments, you can move the `seed` command into a `prisma.config.ts` or Vercel build step when ready.
 
-## Supabase Notes
-- Create a Supabase project and enable the native Postgres connection string (non-pooled) for `DIRECT_URL` when using Prisma migrate.
-- Provision a service role key if you plan to run serverless functions that manipulate data outside of Prisma.
-- Configure Supabase Row Level Security policies as you move beyond the seeded demo org.
-- Add at least one Supabase Auth user (email/password) — the dashboard auto-links the first authenticated user to Aurora Events with admin permissions for local exploration.
+## NextAuth & Neon Notes
+- The seed script provisions a demo administrator (`founder@aurora.events` / `dquote-demo`) with a bcrypt-hashed password so you can explore the dashboard immediately. Update or replace this account before sharing a deployed instance.
+- When deploying to Neon, create both pooled (`DATABASE_URL`) and direct (`DIRECT_URL`) connection strings per the [Prisma + Neon guide](https://www.prisma.io/docs/guides/other/neon), and point migrations at the direct connection to avoid pool limits.
+- Generate a Vercel Blob read/write token (`BLOB_READ_WRITE_TOKEN`) in the Vercel dashboard and scope it to the bucket where proposal receipts should live.
 
 ## Stripe Integration
 - Configure test keys in `.env.local` and ensure `NEXT_PUBLIC_APP_URL` reflects your dev domain.
@@ -78,8 +76,8 @@ Authenticate at `/app/sign-in` using a Supabase email/password account. The firs
 
 ## PDF Receipts
 - `/proposals/[shareId]/receipt` renders a printable recap (totals, selections, acceptance metadata) for the active quote.
-- The acceptance handler uses Puppeteer to load that page and write the PDF under `public/receipts/` (configurable via `PUPPETEER_EXECUTABLE_PATH` if you bundle Chromium separately).
-- The resulting `pdfUrl` is stored on the quote and surfaced to the proposal runtime so clients can download the receipt immediately after acceptance.
+- The acceptance handler uses Puppeteer to load that page and stream the PDF to Vercel Blob (configurable via `PUPPETEER_EXECUTABLE_PATH` if you bundle Chromium separately).
+- The resulting public Blob URL is stored on the quote and surfaced to the proposal runtime so clients can download the receipt immediately after acceptance.
 - When SMTP credentials are present the acceptance flow emails the PDF receipt (and hosted link) to the acceptor plus the client contact.
 
 ## Error Handling & Accessibility
@@ -189,8 +187,8 @@ registry/                # Custom shadcn registry items
 - Stripe Checkout requires valid test keys; use Stripe CLI or dashboard to inspect sessions.
 
 ## Next Steps
-- Layer Supabase role management and invitation flows so additional org members can join without manual seeding.
+- Layer NextAuth-backed role management and invitation flows so additional org members can join without manual seeding.
 - Expand the pricing engine with time-bound or stacked promotions to cover seasonal incentives.
 - Capture webhook updates for Stripe refunds/cancellations and surface the state change inside the proposal runtime.
-- Stream PDF receipts to durable object storage (Supabase buckets or S3) and replace local disk writes for production deployments.
+- Harden Vercel Blob retention policies (versioning, lifecycle rules) to support long-lived receipt archives in production.
 - Visualise analytics with trend lines and cohort filters so admins can compare proposal performance over time.

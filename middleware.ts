@@ -1,26 +1,15 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { auth } from "@auth";
 
 const PUBLIC_ROUTES = new Set(["/app/sign-in"]);
 
-export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-
+export default auth((request) => {
   if (PUBLIC_ROUTES.has(request.nextUrl.pathname)) {
-    return response;
+    return NextResponse.next();
   }
 
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-    return response;
-  }
-
-  const supabase = createMiddlewareClient({ req: request, res: response });
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
-
-  if (!session) {
+  if (!request.auth) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/app/sign-in";
     if (!redirectUrl.searchParams.has("redirect")) {
@@ -29,8 +18,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  return response;
-}
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: ["/app/:path*", "/admin/:path*"]

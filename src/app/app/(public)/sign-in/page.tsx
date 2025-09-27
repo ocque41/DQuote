@@ -6,10 +6,14 @@ import { SignInForm } from "./sign-in-form";
 export default async function SignInPage({
   searchParams
 }: {
-  searchParams?: { redirect?: string };
+  searchParams?: Promise<{ redirect?: string }>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const viewer = await getViewerContext();
-  const redirectTo = searchParams?.redirect && searchParams.redirect.startsWith("/") ? searchParams.redirect : "/app";
+  const redirectTo =
+    resolvedSearchParams?.redirect && resolvedSearchParams.redirect.startsWith("/")
+      ? resolvedSearchParams.redirect
+      : "/app";
 
   if (viewer) {
     redirect(redirectTo);

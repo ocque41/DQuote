@@ -17,7 +17,7 @@ export default async function AuthenticatedAppLayout({ children }: { children: R
     redirect("/app/sign-in");
   }
 
-  const displayName = viewer.orgUser.name ?? viewer.supabaseUser.email ?? "Account";
+  const displayName = viewer.orgUser.name ?? viewer.sessionUser.email ?? "Account";
 
   return (
     <div className="min-h-screen bg-muted/20">

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 import { Button } from "@/components/ui/button";
 
 const sellingPoints = [
@@ -60,7 +62,7 @@ export default function MarketingPage() {
         <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 text-center">
           <h2 className="text-3xl font-semibold">Connect payments and booking in minutes.</h2>
           <p className="text-muted-foreground">
-            Stripe Checkout handles deposits. Supabase + Prisma keep proposal data in sync. Hook in Calendly for a post-accept
+            Stripe Checkout handles deposits. Prisma + Neon keep proposal data in sync. Hook in Calendly for a post-accept
             kickoff meeting.
           </p>
         </div>
