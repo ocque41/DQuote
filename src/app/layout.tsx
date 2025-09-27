@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { stackClientApp } from "@/stack/client";
 
 const geistSans = Geist({
@@ -26,21 +27,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const projectId = process.env.NEXT_PUBLIC_STACK_PROJECT_ID;
-  const publishableClientKey = process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY;
-
-  const shouldMountStack = Boolean(projectId && publishableClientKey);
-
   return (
-    <html lang="en" className="bg-background">
+    <html lang="en" suppressHydrationWarning className="bg-background">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}>
-        {shouldMountStack ? (
-          <StackProvider app={stackClientApp}>
+        <StackProvider app={stackClientApp}>
+          <ThemeProvider>
             <QueryProvider>{children}</QueryProvider>
-          </StackProvider>
-        ) : (
-          <QueryProvider>{children}</QueryProvider>
-        )}
+          </ThemeProvider>
+        </StackProvider>
       </body>
     </html>
   );

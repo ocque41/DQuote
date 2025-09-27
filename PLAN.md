@@ -1,11 +1,44 @@
 # SPRINT 14 PLAN
 
-## Item 1: Restore Neon Auth build compatibility
-- Remove residual NextAuth route/module references and align Neon Auth imports with the published `@stackframe/stack` Next.js entrypoints so `next build` succeeds in CI.
+## Item 1: Shadcn foundation & green theme
+- Ensure shadcn registry is initialized, tailwindcss-animate plugin is registered, and theme provider supports color modes.
+- Align design tokens so the brand primary inherits Tailwind green across light/dark schemes.
 
 ### Acceptance Criteria
-- [x] `npm run build` completes locally without `Module not found` errors for `@auth` or `@stackframe/stack` imports.
-- [x] Middleware and auth helpers still guard `/app/**` and `/admin/**` routes using Neon Auth, with sign-in redirects verified manually.
+- [x] `npx shadcn@latest init -d` completes without diff churn, confirming registry scaffolding and `components/ui` readiness.
+- [x] Global CSS and Tailwind tokens expose green-flavored `--primary` colors applied in both light and dark themes without hex literals.
+
+## Item 2: Neon Auth login/signup experience
+- Import the login-04 block and implement login & signup routes bound to Neon Auth flows with redirects to `/dashboard`.
+- Surface the Neon `<UserButton />` in authenticated shells.
+
+### Acceptance Criteria
+- [x] `/login` and `/signup` render shadcn login-04 layouts with working Neon Auth buttons or submit handlers redirecting to `/dashboard` on success.
+- [x] Authenticated areas display `<UserButton />` while unauthenticated visitors are redirected to `/login`.
+
+## Item 3: Dashboard home protected by requireUser
+- Add the dashboard-01 block at `/dashboard` and protect it with server-side `requireUser` and middleware.
+- Provide navigation linking to the future quotes surface.
+
+### Acceptance Criteria
+- [x] Signed-in users reach `/dashboard` with the shadcn dashboard UI, including sidebar links to Dashboard and Quotes plus a top-right `<UserButton />`.
+- [x] Guests hitting `/dashboard` are redirected to `/login` via middleware + server protection.
+
+## Item 4: Quote Terminal table experience
+- Scaffold `/quotes` using the Tasks example patterns (data table, filters, actions) tailored for quotes data backed by a stub data source.
+- Create reusable components for filters/actions and a server utility to fetch demo quotes.
+
+### Acceptance Criteria
+- [x] `/quotes` renders the table with columns (symbol, name, bid, ask, last, changePct, updatedAt, actions) supporting search, filtering, CSV export, and modal for new quote.
+- [x] Quotes data loads via a server action hitting `lib/data/quotes.ts`, with TODO notes for org-scoped RLS if applicable.
+
+## Item 5: Polish, routing, and documentation
+- Ensure green theming carries through dashboard charts, provide empty/loading/error states, and update docs with guidance.
+- Implement root redirect logic and record testing steps.
+
+### Acceptance Criteria
+- [x] `/` redirects to `/dashboard` for authenticated users and `/login` otherwise; `/dashboard` and `/quotes` expose sensible loading/error fallbacks.
+- [x] README documents shadcn block usage, theme tokens, and the Quote Terminal location, with QA notes on known deployment caveats.
 
 # SPRINT 13 PLAN
 

@@ -10,7 +10,7 @@
   "tailwind": {
     "config": "tailwind.config.ts",
     "css": "src/app/globals.css",
-    "baseColor": "zinc"
+    "baseColor": "green"
   },
   "registries": {
     "@cumulus": "http://localhost:4000/r/{name}.json"
