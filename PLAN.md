@@ -1,3 +1,12 @@
+# SPRINT 14 PLAN
+
+## Item 1: Restore Neon Auth build compatibility
+- Remove residual NextAuth route/module references and align Neon Auth imports with the published `@stackframe/stack` Next.js entrypoints so `next build` succeeds in CI.
+
+### Acceptance Criteria
+- [x] `npm run build` completes locally without `Module not found` errors for `@auth` or `@stackframe/stack` imports.
+- [x] Middleware and auth helpers still guard `/app/**` and `/admin/**` routes using Neon Auth, with sign-in redirects verified manually.
+
 # SPRINT 13 PLAN
 
 ## Item 1: Neon Auth integration & UI shell

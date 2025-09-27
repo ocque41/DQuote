@@ -26,12 +26,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const projectId = process.env.NEXT_PUBLIC_STACK_PROJECT_ID;
+  const publishableClientKey = process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY;
+
+  const shouldMountStack = Boolean(projectId && publishableClientKey);
+
   return (
     <html lang="en" className="bg-background">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}>
-        <StackProvider app={stackClientApp}>
+        {shouldMountStack ? (
+          <StackProvider app={stackClientApp}>
+            <QueryProvider>{children}</QueryProvider>
+          </StackProvider>
+        ) : (
           <QueryProvider>{children}</QueryProvider>
-        </StackProvider>
+        )}
       </body>
     </html>
   );

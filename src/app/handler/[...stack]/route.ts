@@ -1,11 +1,30 @@
-import { StackHandler } from "@stackframe/stack/next";
+import { StackHandler } from "@stackframe/stack";
 
-const secretKey = process.env.STACK_SECRET_SERVER_KEY;
+import { getStackServerApp } from "@/stack/server";
 
-if (!secretKey) {
-  throw new Error("STACK_SECRET_SERVER_KEY is required to configure the Neon Auth handler route.");
+let handlerPromise: Promise<Awaited<ReturnType<typeof StackHandler>>> | null = null;
+
+function resolveHandler() {
+  if (!handlerPromise) {
+    handlerPromise = StackHandler({
+      app: getStackServerApp(),
+      fullPage: true,
+    });
+  }
+
+  return handlerPromise;
 }
 
-export const { GET, POST } = StackHandler({
-  secretKey,
-});
+type StackRouteHandler = Awaited<ReturnType<typeof resolveHandler>>;
+type GetArgs = Parameters<StackRouteHandler["GET"]>;
+type PostArgs = Parameters<StackRouteHandler["POST"]>;
+
+export async function GET(...args: GetArgs) {
+  const handler = await resolveHandler();
+  return handler.GET(...args);
+}
+
+export async function POST(...args: PostArgs) {
+  const handler = await resolveHandler();
+  return handler.POST(...args);
+}

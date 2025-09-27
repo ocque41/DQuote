@@ -1,6 +1,6 @@
 import { requireUser } from "@/auth/requireUser";
 import { prisma } from "@/server/prisma";
-import { stackServerApp } from "@/stack/server";
+import { getStackServerApp } from "@/stack/server";
 
 export interface ViewerContext {
   sessionUser: {
@@ -22,7 +22,8 @@ export interface ViewerContext {
   };
 }
 
-type StackUser = Exclude<Awaited<ReturnType<typeof stackServerApp.getUser>>, null>;
+type StackServerAppInstance = ReturnType<typeof getStackServerApp>;
+type StackUser = Exclude<Awaited<ReturnType<StackServerAppInstance["getUser"]>>, null>;
 
 export async function getViewerContext(currentUser?: StackUser): Promise<ViewerContext | null> {
   let stackUser = currentUser;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { StackServerApp } from "@stackframe/stack/next";
+
+import { createStackServerApp } from "@/stack/server";
 
 const PUBLIC_ROUTES = new Set(["/app/sign-in"]);
 
@@ -11,7 +12,7 @@ export async function middleware(request: NextRequest) {
   let user = null;
 
   try {
-    const stackApp = new StackServerApp({ tokenStore: request });
+    const stackApp = createStackServerApp(request);
     user = await stackApp.getUser({ or: "return-null", tokenStore: request });
   } catch (error) {
     console.error("Neon Auth middleware check failed", error);

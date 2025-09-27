@@ -1,12 +1,15 @@
-import { stackServerApp } from "@/stack/server";
+import { getStackServerApp } from "@/stack/server";
 
-export type RequireUserResult =
-  | { redirect: string }
-  | { user: Exclude<Awaited<ReturnType<typeof stackServerApp.getUser>>, null> };
+type StackServerAppInstance = ReturnType<typeof getStackServerApp>;
+type RequireUserSuccess = {
+  user: Exclude<Awaited<ReturnType<StackServerAppInstance["getUser"]>>, null>;
+};
+
+export type RequireUserResult = { redirect: string } | RequireUserSuccess;
 
 export async function requireUser({ redirectTo = "/handler/sign-in" }: { redirectTo?: string } = {}): Promise<RequireUserResult> {
   try {
-    const user = await stackServerApp.getUser({ or: "return-null" });
+    const user = await getStackServerApp().getUser({ or: "return-null" });
 
     if (!user) {
       return { redirect: redirectTo };
