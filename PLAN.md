@@ -175,3 +175,49 @@
 - [x] README enumerates final setup/run commands, environment variables, and notes on Stripe webhooks/Supabase usage.
 - [x] `.env.example` contains placeholders for all required secrets and optional configs referenced in documentation.
 
+# SPRINT 10 PLAN
+
+## Item 1: Vercel Blob upload endpoint
+- Add a Next.js route at `src/app/api/blob/upload/route.ts` using `@vercel/blob`'s `put` helper to accept form uploads and return the public URL.
+
+### Acceptance Criteria
+- [x] Posting `multipart/form-data` with a `file` field stores the blob with a random suffix under the `dquote/` prefix and responds with `{ url }`.
+- [x] Missing file inputs respond with HTTP 400 and a JSON body containing an `error` message.
+
+## Item 2: Storage documentation refresh
+- Update `README.md` with instructions for configuring `BLOB_READ_WRITE_TOKEN`, testing uploads via the API route, and verifying the resulting public URL.
+
+### Acceptance Criteria
+- [x] README lists the new environment variable and API usage steps alongside verification instructions.
+- [x] Setup section references the blob upload route and links the verification command or curl example.
+
+## Item 3: Environment template update
+- Add the `BLOB_READ_WRITE_TOKEN` placeholder to `.env.example` so deployments surface the required credential.
+
+### Acceptance Criteria
+- [x] `.env.example` includes `BLOB_READ_WRITE_TOKEN=` with a short note that it enables Vercel Blob uploads.
+- [x] Existing variables remain unchanged aside from the new token entry.
+
+# SPRINT 11 PLAN
+
+## Item 1: Avatar upload UI
+- Create a client-side upload page at `/avatar/upload` following Vercel's example so users can submit avatars through the server upload flow.
+
+### Acceptance Criteria
+- [x] Navigating to `/avatar/upload` renders the upload form with file input limited to image types and a submit button wired to call the API.
+- [x] After a successful upload, the UI shows the returned blob URL as a clickable link.
+
+## Item 2: Avatar upload API route
+- Add a route handler at `src/app/api/avatar/upload/route.ts` that streams the request body to Vercel Blob using the provided filename query parameter.
+
+### Acceptance Criteria
+- [x] POST requests with a `filename` query store the blob under that name with public access and respond with the blob payload from Vercel.
+- [x] Invalid requests without a `filename` respond with HTTP 400 and a JSON error message.
+
+## Item 3: Blob dependency and docs refresh
+- Install `@vercel/blob` as a dependency and update documentation with usage instructions and environment requirements for the avatar upload feature.
+
+### Acceptance Criteria
+- [x] `@vercel/blob` appears in `package.json` dependencies and the README documents running the upload demo and verifying blob URLs.
+- [x] README run instructions mention the `/avatar/upload` page and note the 4.5 MB server upload limit.
+
