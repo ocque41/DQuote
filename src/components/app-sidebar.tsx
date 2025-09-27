@@ -3,6 +3,7 @@
 import Link from "next/link";
 import * as React from "react";
 import { ArrowUpCircleIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
@@ -21,20 +22,24 @@ import {
 type SidebarNavItem = {
   title: string;
   href: string;
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon?: LucideIcon;
 };
 
 type SidebarResource = {
   name: string;
   href: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: LucideIcon;
+};
+
+type SidebarSecondaryNavItem = SidebarNavItem & {
+  icon: LucideIcon;
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   orgName: string;
-  navMain: SidebarNavItem[];
-  navSecondary: SidebarNavItem[];
-  resources: SidebarResource[];
+  navMain: ReadonlyArray<SidebarNavItem>;
+  navSecondary: ReadonlyArray<SidebarSecondaryNavItem>;
+  resources: ReadonlyArray<SidebarResource>;
   user: {
     name?: string | null;
     email?: string | null;

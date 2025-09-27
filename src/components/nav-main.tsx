@@ -15,11 +15,11 @@ import {
 export function NavMain({
   items,
 }: {
-  items: {
+  items: ReadonlyArray<{
     title: string;
     href: string;
     icon?: LucideIcon;
-  }[];
+  }>;
 }) {
   const pathname = usePathname();
 

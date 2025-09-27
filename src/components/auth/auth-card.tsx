@@ -17,10 +17,11 @@ import { Label } from "@/components/ui/label";
 const AFTER_AUTH_RETURN_KEY = "dquote_after_auth_return_to";
 
 const credentialsSchema = z.object({
-  email: z.string({ required_error: "Email is required." }).email("Enter a valid email."),
+  email: z.string().min(1, { message: "Email is required." }).email("Enter a valid email."),
   password: z
-    .string({ required_error: "Password is required." })
-    .min(8, "Password must be at least 8 characters."),
+    .string()
+    .min(1, { message: "Password is required." })
+    .min(8, { message: "Password must be at least 8 characters." }),
 });
 
 type CredentialsFormValues = z.infer<typeof credentialsSchema>;

@@ -1,3 +1,13 @@
+# SPRINT 15 PLAN
+
+## Item 1: Sidebar navigation typing compatibility
+- Align the dashboard sidebar props with the readonly navigation config so TypeScript build succeeds without casting hacks.
+- Ensure downstream navigation components continue to work with immutable arrays.
+
+### Acceptance Criteria
+- [x] `npm run build` completes without the readonly-to-mutable assignment error in `src/app/dashboard/page.tsx`.
+- [x] Navigation components accept readonly collections without requiring `as SidebarNavItem[]` type assertions.
+
 # SPRINT 14 PLAN
 
 ## Item 1: Shadcn foundation & green theme

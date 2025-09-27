@@ -16,11 +16,11 @@ export function NavSecondary({
   items,
   ...props
 }: {
-  items: {
+  items: ReadonlyArray<{
     title: string;
     href: string;
     icon: LucideIcon;
-  }[];
+  }>;
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
     <SidebarGroup {...props}>
