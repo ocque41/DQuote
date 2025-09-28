@@ -417,3 +417,15 @@
 
 - [x] Supabase client/helpers are absent from the runtime, middleware, and docs; `.env.example` and README only list Neon, NextAuth, and Blob configuration.
 - [x] Authentication/session flows use the new NextAuth provider (server + client) and proposal acceptance writes receipts exclusively to Vercel Blob.
+# SPRINT 20 PLAN
+
+## Item 1: Fix dashboard navigation serialization crash
+
+- Ensure sidebar navigation metadata no longer passes icon components from server routes to client components, resolving the production error on `/dashboard` and auth redirects.
+- Document verification steps for the authentication surfaces in the README so future debugging covers serialization regressions.
+
+### Acceptance Criteria
+
+- [x] Visiting `/dashboard` after signing in renders without the "Functions cannot be passed directly to Client Components" error, and logging out returns visitors to `/login` without a white screen.
+- [x] README authentication runbook documents how to verify the dashboard/sidebar experience locally (including the command(s) to run) so contributors can confirm the fix.
+

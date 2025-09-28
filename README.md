@@ -44,6 +44,17 @@ An admin analytics view is available at `/admin/analytics`, summarising slide co
 
 Create or authenticate a Neon Auth user at `/login` (or `/signup`). On a fresh database the first signed-in account now provisions a default workspace (slugged from the user) and gains admin access automatically, so `/dashboard` loads without bouncing back to `/login`. Verify the flow by signing in with a new user and confirming an `Org`/`OrgMember` pair exists plus the dashboard renders successfully.
 
+### Dashboard authentication verification
+
+```bash
+pnpm lint
+pnpm dev
+```
+
+1. With the dev server running, visit `/login`, complete the Neon Auth flow, and ensure you land on `/dashboard` without an error banner in the console.
+2. Use the account switcher to sign out; the app should redirect back to `/login` instead of showing a blank "Something went wrong" screen.
+3. Sign back in and open the sidebar navigation — all entries render icons without serialization warnings in the terminal output.
+
 ### Environment Variables
 
 `.env.example` documents the required configuration:

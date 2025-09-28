@@ -1,19 +1,14 @@
-"use client"
+"use client";
 
 import Link from "next/link";
-import {
-  FolderIcon,
-  MoreHorizontalIcon,
-  ShareIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { FolderIcon, MoreHorizontalIcon, ShareIcon } from "lucide-react";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -22,7 +17,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { getSidebarIcon } from "@/components/sidebar-icons";
+import type { SidebarIconName } from "@/lib/navigation";
 
 export function NavDocuments({
   items,
@@ -30,50 +27,53 @@ export function NavDocuments({
   items: ReadonlyArray<{
     name: string;
     href: string;
-    icon: LucideIcon;
-  }>
+    icon: SidebarIconName;
+  }>;
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile } = useSidebar();
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Documents</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <Link href={item.href}>
-                <item.icon />
-                <span>{item.name}</span>
-              </Link>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction
-                  showOnHover
-                  className="rounded-sm data-[state=open]:bg-accent"
+        {items.map((item) => {
+          const Icon = getSidebarIcon(item.icon);
+          return (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton asChild>
+                <Link href={item.href}>
+                  <Icon />
+                  <span>{item.name}</span>
+                </Link>
+              </SidebarMenuButton>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction
+                    showOnHover
+                    className="rounded-sm data-[state=open]:bg-accent"
+                  >
+                    <MoreHorizontalIcon />
+                    <span className="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-24 rounded-lg"
+                  side={isMobile ? "bottom" : "right"}
+                  align={isMobile ? "end" : "start"}
                 >
-                  <MoreHorizontalIcon />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-24 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <FolderIcon />
-                  <span>Open</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <ShareIcon />
-                  <span>Share</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        ))}
+                  <DropdownMenuItem>
+                    <FolderIcon />
+                    <span>Open</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <ShareIcon />
+                    <span>Share</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          );
+        })}
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
             <MoreHorizontalIcon className="text-sidebar-foreground/70" />
@@ -82,5 +82,5 @@ export function NavDocuments({
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

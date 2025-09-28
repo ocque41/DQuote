@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import * as React from "react";
-import { LucideIcon } from "lucide-react";
-
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -11,6 +9,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { getSidebarIcon } from "@/components/sidebar-icons";
+import type { SidebarIconName } from "@/lib/navigation";
 
 export function NavSecondary({
   items,
@@ -19,23 +19,26 @@ export function NavSecondary({
   items: ReadonlyArray<{
     title: string;
     href: string;
-    icon: LucideIcon;
+    icon: SidebarIconName;
   }>;
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const Icon = getSidebarIcon(item.icon);
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <Link href={item.href}>
+                    <Icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

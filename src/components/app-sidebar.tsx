@@ -3,8 +3,6 @@
 import Link from "next/link";
 import * as React from "react";
 import { ArrowUpCircleIcon } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -19,21 +17,24 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import type { SidebarIconName } from "@/lib/navigation";
 
 type SidebarNavItem = {
   title: string;
   href: string;
-  icon?: LucideIcon;
+  icon?: SidebarIconName;
 };
 
 type SidebarResource = {
   name: string;
   href: string;
-  icon: LucideIcon;
+  icon: SidebarIconName;
 };
 
-type SidebarSecondaryNavItem = SidebarNavItem & {
-  icon: LucideIcon;
+type SidebarSecondaryNavItem = {
+  title: string;
+  href: string;
+  icon: SidebarIconName;
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
