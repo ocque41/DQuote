@@ -42,7 +42,7 @@ Visit `http://localhost:3000/` for the marketing site, `/app` for the internal d
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
 
-Create or authenticate a Neon Auth user at `/login` (or `/signup`). The first signed-in account is automatically linked to the seeded Aurora Events org with admin permissions so you can explore the dashboard immediately.
+Create or authenticate a Neon Auth user at `/login` (or `/signup`). On a fresh database the first signed-in account now provisions a default workspace (slugged from the user) and gains admin access automatically, so `/dashboard` loads without bouncing back to `/login`. Verify the flow by signing in with a new user and confirming an `Org`/`OrgMember` pair exists plus the dashboard renders successfully.
 
 ### Environment Variables
 

@@ -1,3 +1,15 @@
+# SPRINT 19 PLAN
+
+## Item 1: Fix auth redirect loop when org records are missing
+
+- Ensure `getViewerContext` provisions a default organization and membership for the first authenticated user so `/dashboard` no longer redirects back to `/login` repeatedly.
+- Document the automatic org bootstrapping logic and how to verify authentication in README runbook notes.
+
+### Acceptance Criteria
+
+- [x] Signing in to a fresh database successfully lands on `/dashboard` without bouncing back to `/login`, with the viewer context populated.
+- [x] README includes updated verification steps covering the authentication check and org auto-provisioning behavior.
+
 # SPRINT 18 PLAN
 
 ## Item 1: Fix OrgMember P2021 in production

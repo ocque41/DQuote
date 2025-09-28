@@ -2,6 +2,26 @@ import { requireUser } from "@/auth/requireUser";
 import { prisma } from "@/server/prisma";
 import { getStackServerApp } from "@/stack/server";
 
+function normalizeOrgName(displayName: string | null, email: string) {
+  const fallback = email.replace(/@.+$/, "").trim() || "Workspace";
+  const nameSource = displayName?.trim() || fallback;
+  return `${nameSource} Workspace`;
+}
+
+function toSlug(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function buildOrgSlug(name: string, userId: string) {
+  const base = toSlug(name) || "workspace";
+  const suffix = userId.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 8) || "team";
+  return `${base}-${suffix}`;
+}
+
 export interface ViewerContext {
   sessionUser: {
     id: string;
@@ -52,14 +72,23 @@ export async function getViewerContext(currentUser?: StackUser): Promise<ViewerC
   });
 
   if (!member) {
-    const fallbackOrg = await prisma.org.findFirst({ orderBy: { createdAt: "asc" } });
-    if (!fallbackOrg) {
-      return null;
+    let org = await prisma.org.findFirst({ orderBy: { createdAt: "asc" } });
+
+    if (!org) {
+      const orgName = normalizeOrgName(stackUser.displayName, email);
+      const orgSlug = buildOrgSlug(orgName, stackUser.id);
+
+      org = await prisma.org.create({
+        data: {
+          name: orgName,
+          slug: orgSlug,
+        },
+      });
     }
 
     member = await prisma.orgMember.create({
       data: {
-        orgId: fallbackOrg.id,
+        orgId: org.id,
         userId: stackUser.id,
         email,
         name: displayName,
