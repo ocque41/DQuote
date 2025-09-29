@@ -13,24 +13,24 @@ const AFTER_AUTH_RETURN_KEY = "dquote_after_auth_return_to";
 
 function resolveRedirectParam(rawRedirect: string | null) {
   if (typeof window === "undefined") {
-    return "/app/dashboard";
+    return "/dashboard";
   }
 
   if (!rawRedirect) {
-    return "/app/dashboard";
+    return "/dashboard";
   }
 
   try {
     const candidate = new URL(rawRedirect, window.location.origin);
     if (candidate.origin !== window.location.origin) {
-      return "/app/dashboard";
+      return "/dashboard";
     }
     return (
       `${candidate.pathname}${candidate.search}${candidate.hash}` ||
-      "/app/dashboard"
+      "/dashboard"
     );
   } catch {
-    return "/app/dashboard";
+    return "/dashboard";
   }
 }
 
@@ -58,6 +58,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
   const stackApp = useStackApp();
   const user = useUser();
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const redirectParam =
     searchParams?.get("redirect") ?? searchParams?.get("after_auth_return_to");
@@ -109,6 +110,8 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       return;
     }
 
+    setIsLoading(true);
+
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(AFTER_AUTH_RETURN_KEY);
     }
@@ -117,6 +120,8 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       status: "signed-in",
       context: { userId: user.id },
     });
+
+    toast.success("Welcome back! Redirecting to dashboard...");
     router.replace(redirectTarget);
     router.refresh();
   }, [redirectTarget, router, user]);
@@ -139,16 +144,23 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       {/* Form Card */}
       <Card className="rounded-2xl border bg-card">
         <CardContent className="space-y-6 p-6 md:p-8">
-          <SignIn
-            fullPage={false}
-            automaticRedirect={false}
-            firstTab="password"
-            extraInfo={
-              <span className="text-sm text-muted-foreground">
-                Use your company email to continue.
-              </span>
-            }
-          />
+          {isLoading ? (
+            <div className="space-y-4 text-center" aria-live="polite">
+              <div className="size-8 mx-auto animate-spin rounded-full border-2 border-primary border-r-transparent" />
+              <p className="text-sm text-muted-foreground">Signing you in...</p>
+            </div>
+          ) : (
+            <SignIn
+              fullPage={false}
+              automaticRedirect={false}
+              firstTab="password"
+              extraInfo={
+                <span className="text-sm text-muted-foreground">
+                  Use your company email to continue.
+                </span>
+              }
+            />
+          )}
         </CardContent>
       </Card>
 
