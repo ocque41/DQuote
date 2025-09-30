@@ -51,14 +51,53 @@ export default async function ItemsPage() {
   }
 
   // Fetch catalog items for the organization
-  const catalogItems = await prisma.catalogItem.findMany({
-    where: {
-      orgId: viewer.org.id,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  let catalogItems: Awaited<ReturnType<typeof prisma.catalogItem.findMany>> = [];
+  let databaseError = false;
+
+  try {
+    catalogItems = await prisma.catalogItem.findMany({
+      where: {
+        orgId: viewer.org.id,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  } catch (error) {
+    console.error("Items page database error:", error);
+    databaseError = true;
+  }
+
+  if (databaseError) {
+    return (
+      <SidebarProvider>
+        <AppSidebar
+          variant="inset"
+          orgName={viewer.org.name}
+          navMain={mainNavigation}
+          resources={resourceNavigation}
+          navSecondary={secondaryNavigation}
+          user={{
+            name: viewer.sessionUser.name,
+            email: viewer.sessionUser.email,
+          }}
+        />
+        <SidebarInset className="bg-muted/20">
+          <SiteHeader
+            title="Catalog Items"
+            subtitle="Manage your product and service catalog for proposals."
+            orgName={viewer.org.name}
+          />
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+            <h1 className="text-2xl font-semibold">Database connection issue</h1>
+            <p className="text-muted-foreground max-w-2xl">
+              We&apos;re having trouble loading your catalog items. Please try refreshing the page.
+            </p>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
 
   const formatCurrency = (value: number, currency = "EUR") => {
     return new Intl.NumberFormat("en-US", {

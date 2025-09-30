@@ -25,10 +25,14 @@ export default async function DashboardPage() {
 
   let viewer: Awaited<ReturnType<typeof getViewerContext>> = null;
   let schemaMissing = false;
+  let databaseError = false;
+  let errorMessage = "";
 
   try {
     viewer = await getViewerContext(session.user);
   } catch (error) {
+    console.error("Dashboard error:", error);
+
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2021"
@@ -38,8 +42,19 @@ export default async function DashboardPage() {
         "Dashboard OrgMember lookup failed because migrations have not been applied. Run `prisma migrate deploy` against the production database and redeploy.",
         error
       );
+    } else if (
+      error instanceof Prisma.PrismaClientInitializationError ||
+      error instanceof Prisma.PrismaClientRustPanicError ||
+      (error instanceof Error && error.message.includes("database server"))
+    ) {
+      databaseError = true;
+      errorMessage = error instanceof Error ? error.message : "Database connection failed";
+      console.error("Database connection error:", error);
     } else {
-      throw error;
+      // For any other errors, still show a user-friendly message instead of crashing
+      databaseError = true;
+      errorMessage = "An unexpected error occurred while loading dashboard data";
+      console.error("Unexpected dashboard error:", error);
     }
   }
 
@@ -54,6 +69,22 @@ export default async function DashboardPage() {
           <code>DATABASE_URL</code> targets the correct branch) and redeploy this
           app.
         </p>
+      </div>
+    );
+  }
+
+  if (databaseError) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="text-2xl font-semibold">Database connection issue</h1>
+        <p className="text-muted-foreground max-w-2xl">
+          We&apos;re having trouble connecting to the database. This might be a temporary issue.
+          Please try refreshing the page in a few moments.
+        </p>
+        <details className="text-sm text-muted-foreground">
+          <summary className="cursor-pointer">Technical details</summary>
+          <p className="mt-2 font-mono text-xs">{errorMessage}</p>
+        </details>
       </div>
     );
   }

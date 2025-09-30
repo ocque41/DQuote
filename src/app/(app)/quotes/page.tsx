@@ -14,7 +14,7 @@ import { getViewerContext } from "@/server/auth";
 import { listQuotes } from "@/lib/data/quotes";
 
 import { QuotesDataTable } from "./data-table";
-import { quoteSchema } from "./schema";
+import { quoteSchema, type Quote } from "./schema";
 
 export const metadata: Metadata = {
   title: "Quote Terminal | DQuote",
@@ -33,8 +33,47 @@ export default async function QuotesPage() {
     redirect("/login?redirect=/quotes");
   }
 
-  const rawQuotes = await listQuotes({ orgId: viewer.org.id });
-  const quotes = rawQuotes.map((quote) => quoteSchema.parse(quote));
+  let quotes: Quote[] = [];
+  let databaseError = false;
+
+  try {
+    const rawQuotes = await listQuotes({ orgId: viewer.org.id });
+    quotes = rawQuotes.map((quote) => quoteSchema.parse(quote));
+  } catch (error) {
+    console.error("Quotes page database error:", error);
+    databaseError = true;
+  }
+
+  if (databaseError) {
+    return (
+      <SidebarProvider>
+        <AppSidebar
+          variant="inset"
+          orgName={viewer.org.name}
+          navMain={mainNavigation}
+          resources={resourceNavigation}
+          navSecondary={secondaryNavigation}
+          user={{
+            name: viewer.sessionUser.name,
+            email: viewer.sessionUser.email,
+          }}
+        />
+        <SidebarInset className="bg-muted/20">
+          <SiteHeader
+            title="Quote Terminal"
+            subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
+            orgName={viewer.org.name}
+          />
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+            <h1 className="text-2xl font-semibold">Database connection issue</h1>
+            <p className="text-muted-foreground max-w-2xl">
+              We&apos;re having trouble loading your quotes. Please try refreshing the page.
+            </p>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
