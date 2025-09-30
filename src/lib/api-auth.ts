@@ -48,7 +48,7 @@ export async function authenticateApiRequest(): Promise<ApiAuthResponse> {
 /**
  * Alternative method using Stack Auth directly with request context
  */
-export async function authenticateApiRequestWithStackApp(request: NextRequest): Promise<ApiAuthResponse> {
+export async function authenticateApiRequestWithStackApp(_request: NextRequest): Promise<ApiAuthResponse> {
   try {
     const stackApp = getStackServerApp();
     const user = await stackApp.getUser({ or: "return-null" });
