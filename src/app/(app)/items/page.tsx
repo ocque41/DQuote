@@ -133,7 +133,7 @@ export default async function ItemsPage() {
                         <TableHead>Description</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead>Tags</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -149,7 +149,7 @@ export default async function ItemsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {formatCurrency(Number(item.priceAmount), item.priceCurrency)}
+                            {formatCurrency(Number(item.unitPrice), item.currency)}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
@@ -166,8 +166,8 @@ export default async function ItemsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={item.type === "PRODUCT" ? "default" : "outline"}>
-                              {item.type.toLowerCase()}
+                            <Badge variant={item.active ? "default" : "outline"}>
+                              {item.active ? "active" : "inactive"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -220,10 +220,10 @@ export default async function ItemsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Products</span>
+                    <span className="text-sm text-muted-foreground">Active Items</span>
                   </div>
                   <div className="mt-2 text-2xl font-bold">
-                    {catalogItems.filter(item => item.type === "PRODUCT").length}
+                    {catalogItems.filter(item => item.active).length}
                   </div>
                 </CardContent>
               </Card>
@@ -231,10 +231,10 @@ export default async function ItemsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Services</span>
+                    <span className="text-sm text-muted-foreground">Inactive Items</span>
                   </div>
                   <div className="mt-2 text-2xl font-bold">
-                    {catalogItems.filter(item => item.type === "SERVICE").length}
+                    {catalogItems.filter(item => !item.active).length}
                   </div>
                 </CardContent>
               </Card>
