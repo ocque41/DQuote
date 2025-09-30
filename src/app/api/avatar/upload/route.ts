@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 
+import { authenticateApiRequest } from '@/lib/api-auth';
+
 export async function POST(request: Request) {
+  const authResult = await authenticateApiRequest();
+  if (!authResult.success) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+
   const { searchParams } = new URL(request.url);
   const filename = searchParams.get('filename');
 

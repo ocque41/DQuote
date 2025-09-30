@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { authenticateApiRequest } from "@/lib/api-auth";
 import { prisma } from "@/server/prisma";
 import { evaluatePricing, PricingLineItem } from "@/server/pricing/rules";
 
@@ -19,6 +20,12 @@ function round(value: number) {
 }
 
 export async function POST(request: Request) {
+  // Authenticate the request
+  const authResult = await authenticateApiRequest();
+  if (!authResult.success) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+
   const payload = await request.json();
   const parsed = PricingRequestSchema.safeParse(payload);
 
@@ -26,8 +33,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  // Get proposal and verify user has access to it (same organization)
   const proposal = await prisma.proposal.findUnique({
-    where: { id: parsed.data.proposalId },
+    where: {
+      id: parsed.data.proposalId,
+      orgId: authResult.viewer.org.id // Ensure user can only access their org's proposals
+    },
     include: {
       quote: true,
       org: {

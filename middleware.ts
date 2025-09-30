@@ -1,40 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createStackServerApp } from "@/stack/server";
-
-const PUBLIC_ROUTES = new Set([
-  "/login",
-  "/signup",
-  "/handler/sign-in",
-  "/handler/sign-up"
-]);
-
 export async function middleware(request: NextRequest) {
-  // Allow all marketing routes (/, /docs, /support, etc.) and public auth routes
-  if (PUBLIC_ROUTES.has(request.nextUrl.pathname) ||
-      request.nextUrl.pathname.startsWith("/proposals/") ||
-      request.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.next();
+  console.log(`[MIDDLEWARE TEST] Path: ${request.nextUrl.pathname}`);
+
+  // Simple test: redirect everything except login/signup to login
+  if (request.nextUrl.pathname === "/test-protected-route") {
+    console.log("[MIDDLEWARE TEST] Redirecting test route to login");
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  let user = null;
-
-  try {
-    const stackApp = createStackServerApp(request);
-    user = await stackApp.getUser({ or: "return-null", tokenStore: request });
-  } catch (error) {
-    console.error("Neon Auth middleware check failed", error);
-  }
-
-  if (!user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    if (!redirectUrl.searchParams.has("redirect")) {
-      redirectUrl.searchParams.set("redirect", `${request.nextUrl.pathname}${request.nextUrl.search}`);
-    }
-    return NextResponse.redirect(redirectUrl);
-  }
-
+  console.log(`[MIDDLEWARE TEST] Allowing: ${request.nextUrl.pathname}`);
   return NextResponse.next();
 }
 

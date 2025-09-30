@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
+import { authenticateApiRequest } from "@/lib/api-auth";
 import { prisma } from "@/server/prisma";
 
 const BodySchema = z.object({
@@ -13,11 +14,20 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const authResult = await authenticateApiRequest();
+  if (!authResult.success) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+
   const body = await req.json();
   const parsed = BodySchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (parsed.data.orgId !== authResult.viewer.org.id) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
   const shareId = randomBytes(5).toString("hex");
