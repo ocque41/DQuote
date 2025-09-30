@@ -86,7 +86,7 @@ src/app/
 ### Data Model (Prisma Schema)
 Key entities:
 - **Org**: Multi-tenant organization structure
-- **User**: NextAuth users with org membership and roles
+- **User**: Stack Auth users with org membership and roles
 - **Client**: Customer/prospect records
 - **CatalogItem**: Product/service catalog with pricing and tags
 - **ProposalTemplate**: Reusable proposal structures
@@ -240,8 +240,8 @@ pnpm dev
 
 ## Recent Changes (Sprint 10+)
 
-### Migration from Supabase to Neon + NextAuth
-- **Completed**: Full migration from Supabase Auth to NextAuth
+### Migration from Supabase to Neon + Stack Auth
+- **Completed**: Full migration from Supabase Auth to Stack Auth
 - **Storage**: Moved from Supabase Storage to Vercel Blob
 - **Database**: Using Neon PostgreSQL with Prisma
 - **No Legacy Code**: All Supabase references removed

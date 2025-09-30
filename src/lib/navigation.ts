@@ -3,11 +3,15 @@ export type SidebarIconName =
   | "file-text"
   | "notebook-pen"
   | "bar-chart-3"
-  | "help-circle";
+  | "help-circle"
+  | "shopping-cart"
+  | "settings"
+  | "package";
 
 export const mainNavigation = [
   { title: "Dashboard", href: "/dashboard", icon: "layout-dashboard" },
   { title: "Quote Terminal", href: "/quotes", icon: "file-text" },
+  { title: "Items", href: "/items", icon: "package" },
 ] as const satisfies ReadonlyArray<{
   title: string;
   href: string;
@@ -25,7 +29,7 @@ export const resourceNavigation = [
 }>;
 
 export const secondaryNavigation = [
-  { title: "Docs", href: "/docs", icon: "file-text" },
+  { title: "Settings", href: "/settings", icon: "settings" },
   { title: "Support", href: "/support", icon: "help-circle" },
 ] as const satisfies ReadonlyArray<{
   title: string;

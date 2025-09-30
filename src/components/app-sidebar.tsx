@@ -59,7 +59,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   return (
     <Sidebar
-      collapsible="offcanvas"
+      collapsible="icon"
       className={cn("border-border/60 bg-sidebar border-r", className)}
       {...props}
     >
@@ -71,14 +71,14 @@ export function AppSidebar({
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <Link href="/dashboard" className="flex items-center gap-2">
-                <ArrowUpCircleIcon className="h-5 w-5" />
-                <span className="text-base font-semibold">{orgName}</span>
+                <ArrowUpCircleIcon className="h-5 w-5 shrink-0" />
+                <span className="text-base font-semibold truncate">{orgName}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="flex flex-col gap-0">
         <NavMain items={navMain} />
         <NavDocuments items={resources} />
         <NavSecondary items={navSecondary} className="mt-auto" />

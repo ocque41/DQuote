@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   ColumnFiltersState,
   SortingState,
@@ -74,6 +75,7 @@ interface QuotesDataTableProps {
 }
 
 export function QuotesDataTable({ data }: QuotesDataTableProps) {
+  const router = useRouter();
   const [tableData, setTableData] = React.useState(() => data);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -205,7 +207,7 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
           table={table}
           searchValue={globalFilter}
           onSearchChange={setGlobalFilter}
-          onCreate={() => setIsCreateOpen(true)}
+          onCreate={() => router.push("/quotes/new")}
           onExport={handleExport}
         />
         <SheetContent className="sm:max-w-md">
