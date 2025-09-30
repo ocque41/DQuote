@@ -5,6 +5,7 @@ import "./globals.css";
 
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { stackClientApp } from "@/stack/client";
 
 const geistSans = Geist({
@@ -32,7 +33,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}>
         <StackProvider app={stackClientApp}>
           <ThemeProvider>
-            <QueryProvider>{children}</QueryProvider>
+            <TooltipProvider>
+              <QueryProvider>{children}</QueryProvider>
+            </TooltipProvider>
           </ThemeProvider>
         </StackProvider>
       </body>

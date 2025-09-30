@@ -18,8 +18,8 @@ export const stackClientApp = new StackClientApp({
     afterSignIn: "/dashboard",
     afterSignUp: "/dashboard",
     forgotPassword: "/handler/forgot-password",
-    oauthCallback: "/login",
-    magicLinkCallback: "/login",
+    oauthCallback: "/handler/oauth-callback",
+    magicLinkCallback: "/handler/oauth-callback",
     home: "/dashboard",
   },
 });
