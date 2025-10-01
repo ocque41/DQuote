@@ -107,13 +107,13 @@ export default async function DashboardPage() {
         navSecondary={secondaryNavigation}
         user={{ name: userName, email: userEmail }}
       />
-      <SidebarInset className="bg-muted/20">
+      <SidebarInset className="bg-muted/20 overflow-x-hidden">
         <SiteHeader
           title="Pipeline overview"
           subtitle="Track quote velocity, conversion, and collaboration health."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:gap-4 sm:px-4 sm:py-4 lg:gap-6 lg:px-4 xl:px-6 2xl:px-8 w-full overflow-x-hidden">
+        <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:gap-4 sm:px-4 sm:py-4 lg:gap-6 lg:px-6 xl:px-8 2xl:px-10 max-w-full">
           <SectionCards />
           <ChartAreaInteractive />
           <div className="border-border/70 bg-card/95 rounded-lg border p-2 shadow-sm sm:rounded-2xl sm:p-4">
