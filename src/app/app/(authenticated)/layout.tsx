@@ -1,15 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
-import { UserButton } from "@stackframe/stack";
+import { LayoutDashboard, FileText, BarChart3 } from "lucide-react";
 
 import { requireUser } from "@/auth/requireUser";
 import { getViewerContext } from "@/server/auth";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
 
 const navLinks = [
-  { href: "/app", label: "Overview" },
-  { href: "/app/proposals", label: "Proposals" },
-  { href: "/admin/analytics", label: "Analytics" }
+  { href: "/app", title: "Overview", icon: "layout-dashboard" as const },
+  { href: "/app/proposals", title: "Proposals", icon: "file-text" as const },
+  { href: "/admin/analytics", title: "Analytics", icon: "bar-chart-3" as const }
+];
+
+const resourceLinks = [
+  { name: "Documentation", href: "#", icon: "book" as const },
+  { name: "Support", href: "#", icon: "life-buoy" as const }
+];
+
+const secondaryLinks = [
+  { title: "Settings", href: "/app/settings", icon: "settings" as const },
+  { title: "Help", href: "#", icon: "help-circle" as const }
 ];
 
 export default async function AuthenticatedAppLayout({ children }: { children: React.ReactNode }) {
@@ -28,29 +40,30 @@ export default async function AuthenticatedAppLayout({ children }: { children: R
   const displayName = viewer.orgUser.name ?? viewer.sessionUser.email ?? "Account";
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-semibold">
-            DQuote
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="text-muted-foreground transition hover:text-foreground">
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-semibold leading-tight">{displayName}</p>
-              <p className="text-xs text-muted-foreground">{viewer.org.name}</p>
-            </div>
-            <UserButton />
+    <SidebarProvider>
+      <AppSidebar
+        orgName={viewer.org.name}
+        navMain={navLinks}
+        navSecondary={secondaryLinks}
+        resources={resourceLinks}
+        user={{
+          name: displayName,
+          email: viewer.sessionUser.email
+        }}
+      />
+      <SidebarInset>
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background/90 backdrop-blur">
+          <div className="flex flex-1 items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <div className="h-4 w-px bg-border" />
+            <Link href="/" className="text-xl font-semibold">
+              DQuote
+            </Link>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
-    </div>
+        </header>
+        <main className="flex-1 p-6">{children}</main>
+      </SidebarInset>
+      <SidebarMobileToggle />
+    </SidebarProvider>
   );
 }
