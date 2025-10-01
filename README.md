@@ -55,6 +55,15 @@ pnpm dev
 2. Use the account switcher to sign out; the app should redirect back to `/login` instead of showing a blank "Something went wrong" screen.
 3. Sign back in and open the sidebar navigation — all entries render icons without serialization warnings in the terminal output.
 
+### Sidebar layout verification
+
+```bash
+pnpm exec playwright test tests/ui/layout.spec.ts
+```
+
+1. Run the Playwright suite to assert the dashboard and items routes render without horizontal scrollbars from 1280 px through 2560 px viewports.
+2. The tests also collapse the sidebar and ensure the grid column shrinks to the icon rail so the content region widens immediately.
+
 ### Environment Variables
 
 `.env.example` documents the required configuration:

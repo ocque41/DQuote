@@ -2,15 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/auth/requireUser";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
-import {
-  mainNavigation,
-  resourceNavigation,
-  secondaryNavigation,
-} from "@/lib/navigation";
+import { AppShell } from "@/components/app-shell";
 import { getViewerContext } from "@/server/auth";
 import { listQuotes } from "@/lib/data/quotes";
 
@@ -47,61 +39,29 @@ export default async function QuotesPage() {
 
   if (databaseError) {
     return (
-      <SidebarProvider>
-        <AppSidebar
-          variant="inset"
-          orgName={viewer.org.name}
-          navMain={mainNavigation}
-          resources={resourceNavigation}
-          navSecondary={secondaryNavigation}
-          user={{
-            name: viewer.sessionUser.name,
-            email: viewer.sessionUser.email,
-          }}
-        />
-        <SidebarInset className="bg-muted/20 min-w-0">
-          <SiteHeader
-            title="Quote Terminal"
-            subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
-            orgName={viewer.org.name}
-          />
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <h1 className="text-2xl font-semibold">Database connection issue</h1>
-            <p className="text-muted-foreground max-w-2xl">
-              We&apos;re having trouble loading your quotes. Please try refreshing the page.
-            </p>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <AppShell
+        viewer={viewer}
+        title="Quote Terminal"
+        subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
+        contentClassName="items-center justify-center gap-4 text-center"
+      >
+        <h1 className="text-2xl font-semibold">Database connection issue</h1>
+        <p className="max-w-2xl text-muted-foreground">
+          We&apos;re having trouble loading your quotes. Please try refreshing the page.
+        </p>
+      </AppShell>
     );
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        variant="inset"
-        orgName={viewer.org.name}
-        navMain={mainNavigation}
-        resources={resourceNavigation}
-        navSecondary={secondaryNavigation}
-        user={{
-          name: viewer.sessionUser.name,
-          email: viewer.sessionUser.email,
-        }}
-      />
-      <SidebarInset className="bg-muted/20 min-w-0">
-        <SiteHeader
-          title="Quote Terminal"
-          subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
-          orgName={viewer.org.name}
-        />
-        <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:gap-4 sm:px-4 sm:py-4 lg:gap-6 lg:px-6 xl:px-8 2xl:px-10 max-w-[min(100%,theme(screens.4xl))] mx-auto w-full">
-          <div className="border-border/70 bg-card/95 rounded-lg border p-2 shadow-sm sm:rounded-2xl sm:p-4">
-            <QuotesDataTable data={quotes} />
-          </div>
-        </div>
-      </SidebarInset>
-      <SidebarMobileToggle />
-    </SidebarProvider>
+    <AppShell
+      viewer={viewer}
+      title="Quote Terminal"
+      subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
+    >
+      <div className="rounded-lg border border-border/70 bg-card/95 p-2 shadow-sm sm:rounded-2xl sm:p-4">
+        <QuotesDataTable data={quotes} />
+      </div>
+    </AppShell>
   );
 }

@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/auth/requireUser";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
+import { AppShell } from "@/components/app-shell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -18,19 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, Plus, Search, Package, Edit, Trash2 } from "lucide-react";
-import {
-  mainNavigation,
-  resourceNavigation,
-  secondaryNavigation,
-} from "@/lib/navigation";
+import { Edit, MoreVertical, Package, Plus, Search, Trash2 } from "lucide-react";
+
 import { getViewerContext } from "@/server/auth";
 import { prisma } from "@/server/prisma";
 
@@ -51,7 +44,6 @@ export default async function ItemsPage() {
     redirect("/login?redirect=/items");
   }
 
-  // Fetch catalog items for the organization
   let catalogItems: Awaited<ReturnType<typeof prisma.catalogItem.findMany>> = [];
   let databaseError = false;
 
@@ -71,32 +63,17 @@ export default async function ItemsPage() {
 
   if (databaseError) {
     return (
-      <SidebarProvider>
-        <AppSidebar
-          variant="inset"
-          orgName={viewer.org.name}
-          navMain={mainNavigation}
-          resources={resourceNavigation}
-          navSecondary={secondaryNavigation}
-          user={{
-            name: viewer.sessionUser.name,
-            email: viewer.sessionUser.email,
-          }}
-        />
-        <SidebarInset className="bg-muted/20 min-w-0">
-          <SiteHeader
-            title="Catalog Items"
-            subtitle="Manage your product and service catalog for proposals."
-            orgName={viewer.org.name}
-          />
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <h1 className="text-2xl font-semibold">Database connection issue</h1>
-            <p className="text-muted-foreground max-w-2xl">
-              We&apos;re having trouble loading your catalog items. Please try refreshing the page.
-            </p>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <AppShell
+        viewer={viewer}
+        title="Catalog Items"
+        subtitle="Manage your product and service catalog for proposals."
+        contentClassName="items-center justify-center gap-4 text-center"
+      >
+        <h1 className="text-2xl font-semibold">Database connection issue</h1>
+        <p className="max-w-2xl text-muted-foreground">
+          We&apos;re having trouble loading your catalog items. Please try refreshing the page.
+        </p>
+      </AppShell>
     );
   }
 
@@ -109,180 +86,153 @@ export default async function ItemsPage() {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        variant="inset"
-        orgName={viewer.org.name}
-        navMain={mainNavigation}
-        resources={resourceNavigation}
-        navSecondary={secondaryNavigation}
-        user={{
-          name: viewer.sessionUser.name,
-          email: viewer.sessionUser.email,
-        }}
-      />
-      <SidebarInset className="bg-muted/20 min-w-0">
-        <SiteHeader
-          title="Catalog Items"
-          subtitle="Manage your product and service catalog for proposals."
-          orgName={viewer.org.name}
-        />
-        <div className="flex flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-4 lg:px-6 xl:px-8 2xl:px-10 max-w-[min(100%,theme(screens.4xl))] mx-auto w-full">
-          {/* Header Actions */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search items..."
-                className="pl-9"
-              />
+    <AppShell
+      viewer={viewer}
+      title="Catalog Items"
+      subtitle="Manage your product and service catalog for proposals."
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search items..." className="pl-9" />
+        </div>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Item
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Catalog Items ({catalogItems.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {catalogItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Package className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 text-lg font-semibold">No items yet</h3>
+              <p className="mb-4 max-w-md text-muted-foreground">
+                Start building your catalog by adding products and services that you can include in proposals.
+              </p>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Your First Item
+              </Button>
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
-          </div>
-
-          {/* Items Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Catalog Items ({catalogItems.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {catalogItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Package className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No items yet</h3>
-                  <p className="text-muted-foreground mb-4 max-w-md">
-                    Start building your catalog by adding products and services that you can include in proposals.
-                  </p>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Your First Item
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto lg:overflow-x-visible">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Tags</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {catalogItems.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">
-                            {item.name}
-                          </TableCell>
-                          <TableCell className="max-w-[300px]">
-                            <div className="truncate text-muted-foreground">
-                              {item.description || "—"}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {formatCurrency(Number(item.unitPrice), item.currency)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {item.tags.slice(0, 3).map((tag) => (
-                                <Badge key={tag} variant="secondary" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                              {item.tags.length > 3 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{item.tags.length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={item.active ? "default" : "outline"}>
-                              {item.active ? "active" : "inactive"}
+          ) : (
+            <div className="overflow-x-auto lg:overflow-x-visible">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {catalogItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <div className="truncate text-muted-foreground">{item.description || "—"}</div>
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(Number(item.unitPrice), item.currency)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {item.tags.slice(0, 3).map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit Item
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Package className="mr-2 h-4 w-4" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Item
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          {catalogItems.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Total Items</span>
-                  </div>
-                  <div className="mt-2 text-2xl font-bold">{catalogItems.length}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Active Items</span>
-                  </div>
-                  <div className="mt-2 text-2xl font-bold">
-                    {catalogItems.filter(item => item.active).length}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Inactive Items</span>
-                  </div>
-                  <div className="mt-2 text-2xl font-bold">
-                    {catalogItems.filter(item => !item.active).length}
-                  </div>
-                </CardContent>
-              </Card>
+                          ))}
+                          {item.tags.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{item.tags.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.active ? "default" : "outline"}>
+                          {item.active ? "active" : "inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Item
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Package className="mr-2 h-4 w-4" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Item
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {catalogItems.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Total Items</span>
+              </div>
+              <div className="mt-2 text-2xl font-bold">{catalogItems.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Active Items</span>
+              </div>
+              <div className="mt-2 text-2xl font-bold">
+                {catalogItems.filter((item) => item.active).length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Inactive Items</span>
+              </div>
+              <div className="mt-2 text-2xl font-bold">
+                {catalogItems.filter((item) => !item.active).length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </SidebarInset>
-      <SidebarMobileToggle />
-    </SidebarProvider>
+      )}
+    </AppShell>
   );
 }

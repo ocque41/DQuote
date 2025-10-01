@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { getStackServerApp } from "@/stack/server";
 import { getViewerContext } from "@/server/auth";
 
@@ -48,7 +47,7 @@ export async function authenticateApiRequest(): Promise<ApiAuthResponse> {
 /**
  * Alternative method using Stack Auth directly with request context
  */
-export async function authenticateApiRequestWithStackApp(_request: NextRequest): Promise<ApiAuthResponse> {
+export async function authenticateApiRequestWithStackApp(): Promise<ApiAuthResponse> {
   try {
     const stackApp = getStackServerApp();
     const user = await stackApp.getUser({ or: "return-null" });
