@@ -5,6 +5,7 @@ import { requireUser } from "@/auth/requireUser";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -281,6 +282,7 @@ export default async function ItemsPage() {
           )}
         </div>
       </SidebarInset>
+      <SidebarMobileToggle />
     </SidebarProvider>
   );
 }

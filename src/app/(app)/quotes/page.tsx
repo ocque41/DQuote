@@ -5,6 +5,7 @@ import { requireUser } from "@/auth/requireUser";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
 import {
   mainNavigation,
   resourceNavigation,
@@ -100,6 +101,7 @@ export default async function QuotesPage() {
           </div>
         </div>
       </SidebarInset>
+      <SidebarMobileToggle />
     </SidebarProvider>
   );
 }

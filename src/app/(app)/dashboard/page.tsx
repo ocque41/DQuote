@@ -7,6 +7,7 @@ import { DataTable } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
 import {
   mainNavigation,
   resourceNavigation,
@@ -120,6 +121,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       </SidebarInset>
+      <SidebarMobileToggle />
     </SidebarProvider>
   );
 }
