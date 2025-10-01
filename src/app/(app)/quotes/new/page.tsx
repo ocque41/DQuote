@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Eye, Plus, Trash2, FileText, Play, Grid3x3, ArrowRight } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, FileText, Play, Grid3x3, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
@@ -176,14 +175,14 @@ export default function NewQuotePage() {
       case "intro":
         return (
           <Card className="max-w-3xl mx-auto">
-            <CardHeader className="text-center space-y-4 pb-8">
-              <CardTitle className="text-4xl font-bold">{slide.title || "Welcome"}</CardTitle>
+            <CardHeader className="text-center space-y-4 pb-6 sm:pb-8 px-4 sm:px-6">
+              <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold">{slide.title || "Welcome"}</CardTitle>
               {slide.subtitle && (
-                <p className="text-lg text-muted-foreground">{slide.subtitle}</p>
+                <p className="text-base sm:text-lg text-muted-foreground">{slide.subtitle}</p>
               )}
             </CardHeader>
-            <CardContent className="text-center">
-              <Button size="lg" onClick={() => setCurrentSlideIndex(currentSlideIndex + 1)}>
+            <CardContent className="text-center px-4 sm:px-6">
+              <Button size="lg" onClick={() => setCurrentSlideIndex(currentSlideIndex + 1)} className="w-full sm:w-auto">
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </CardContent>
@@ -193,21 +192,21 @@ export default function NewQuotePage() {
       case "choice":
         return (
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">{slide.title || "Choose Your Option"}</h2>
+            <div className="text-center mb-6 sm:mb-8 px-4">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">{slide.title || "Choose Your Option"}</h2>
               {slide.subtitle && (
-                <p className="text-muted-foreground">{slide.subtitle}</p>
+                <p className="text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
               )}
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               {slide.optionA && (
                 <Card className="cursor-pointer hover:border-primary transition-all hover:shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{slide.optionA.name || "Option A"}</CardTitle>
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="text-xl sm:text-2xl">{slide.optionA.name || "Option A"}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">{slide.optionA.description}</p>
-                    <div className="text-3xl font-bold">{formatCurrency(slide.optionA.price)}</div>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-sm sm:text-base text-muted-foreground">{slide.optionA.description}</p>
+                    <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(slide.optionA.price)}</div>
                     <Button className="w-full" size="lg">
                       Select This Option
                     </Button>
@@ -216,12 +215,12 @@ export default function NewQuotePage() {
               )}
               {slide.optionB && (
                 <Card className="cursor-pointer hover:border-primary transition-all hover:shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{slide.optionB.name || "Option B"}</CardTitle>
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="text-xl sm:text-2xl">{slide.optionB.name || "Option B"}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">{slide.optionB.description}</p>
-                    <div className="text-3xl font-bold">{formatCurrency(slide.optionB.price)}</div>
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                    <p className="text-sm sm:text-base text-muted-foreground">{slide.optionB.description}</p>
+                    <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(slide.optionB.price)}</div>
                     <Button className="w-full" size="lg">
                       Select This Option
                     </Button>
@@ -234,23 +233,23 @@ export default function NewQuotePage() {
 
       case "addon":
         return (
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">{slide.title || "Add-ons"}</h2>
+          <div className="max-w-3xl mx-auto px-4">
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">{slide.title || "Add-ons"}</h2>
               {slide.subtitle && (
-                <p className="text-muted-foreground">{slide.subtitle}</p>
+                <p className="text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
               )}
             </div>
             {slide.optionA && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{slide.optionA.name || "Add-on Option"}</CardTitle>
-                    <div className="text-xl font-bold">{formatCurrency(slide.optionA.price)}</div>
+              <Card className="mb-4 sm:mb-6">
+                <CardHeader className="px-4 sm:px-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <CardTitle className="text-lg sm:text-xl">{slide.optionA.name || "Add-on Option"}</CardTitle>
+                    <div className="text-xl sm:text-2xl font-bold">{formatCurrency(slide.optionA.price)}</div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{slide.optionA.description}</p>
+                <CardContent className="px-4 sm:px-6">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-4">{slide.optionA.description}</p>
                   <Button variant="outline" className="w-full">
                     Add to Selection
                   </Button>
@@ -270,16 +269,16 @@ export default function NewQuotePage() {
       case "review":
         return (
           <Card className="max-w-3xl mx-auto">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-bold">{slide.title || "Review Your Selection"}</CardTitle>
+            <CardHeader className="text-center px-4 sm:px-6">
+              <CardTitle className="text-2xl sm:text-3xl font-bold">{slide.title || "Review Your Selection"}</CardTitle>
               {slide.subtitle && (
-                <p className="text-muted-foreground">{slide.subtitle}</p>
+                <p className="text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
               )}
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
               <div className="text-center">
-                <p className="text-muted-foreground mb-2">This is a preview of the review slide</p>
-                <Button size="lg">Accept & Continue</Button>
+                <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">This is a preview of the review slide</p>
+                <Button size="lg" className="w-full sm:w-auto">Accept & Continue</Button>
               </div>
             </CardContent>
           </Card>
@@ -294,36 +293,45 @@ export default function NewQuotePage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-4">
+        <div className="flex h-16 items-center justify-between px-3 sm:px-6 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push("/quotes")}
-              className="gap-2"
+              className="gap-2 shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Quotes
+              <span className="hidden sm:inline">Back to Quotes</span>
             </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <span className="font-semibold">
+            <Separator orientation="vertical" className="h-6 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+              <span className="font-semibold truncate text-sm sm:text-base">
                 {formData.title || "New Quote Builder"}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Tabs value={activeView} onValueChange={(v) => setActiveView(v as typeof activeView)} className="w-auto">
-              <TabsList>
-                <TabsTrigger value="builder">Builder</TabsTrigger>
-                <TabsTrigger value="flow">Flow Map</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
+              <TabsList className="h-9">
+                <TabsTrigger value="builder" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <span className="hidden sm:inline">Builder</span>
+                  <span className="sm:hidden">Build</span>
+                </TabsTrigger>
+                <TabsTrigger value="flow" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <span className="hidden sm:inline">Flow Map</span>
+                  <span className="sm:hidden">Flow</span>
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <span className="hidden sm:inline">Preview</span>
+                  <span className="sm:hidden">View</span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button onClick={handleSave} className="gap-2">
+            <Button onClick={handleSave} className="gap-2" size="sm">
               <Save className="h-4 w-4" />
-              Save Quote
+              <span className="hidden md:inline">Save Quote</span>
             </Button>
           </div>
         </div>
@@ -331,10 +339,10 @@ export default function NewQuotePage() {
 
       {/* Main Content */}
       {activeView === "builder" && (
-        <div className="container mx-auto p-6">
-          <div className="grid gap-8 lg:grid-cols-3">
+        <div className="container mx-auto p-3 sm:p-6">
+          <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
             {/* Quote Builder */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Basic Info */}
               <Card>
                 <CardHeader>
@@ -370,26 +378,28 @@ export default function NewQuotePage() {
 
               {/* Slide Builder */}
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Slides</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Build your quote presentation flow
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => addSlide("intro")} size="sm" variant="outline">
-                      Intro
-                    </Button>
-                    <Button onClick={() => addSlide("choice")} size="sm" variant="outline">
-                      Choice
-                    </Button>
-                    <Button onClick={() => addSlide("addon")} size="sm" variant="outline">
-                      Add-on
-                    </Button>
-                    <Button onClick={() => addSlide("review")} size="sm" variant="outline">
-                      Review
-                    </Button>
+                <CardHeader className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <CardTitle>Slides</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Build your quote presentation flow
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => addSlide("intro")} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                        Intro
+                      </Button>
+                      <Button onClick={() => addSlide("choice")} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                        Choice
+                      </Button>
+                      <Button onClick={() => addSlide("addon")} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                        Add-on
+                      </Button>
+                      <Button onClick={() => addSlide("review")} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                        Review
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -409,17 +419,18 @@ export default function NewQuotePage() {
                       {formData.slides.map((slide, index) => (
                         <Card key={slide.id} className={editingSlideId === slide.id ? "border-primary" : ""}>
                           <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge>{slide.type}</Badge>
-                                <span className="font-medium">Slide {index + 1}</span>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Badge className="shrink-0">{slide.type}</Badge>
+                                <span className="font-medium text-sm sm:text-base truncate">Slide {index + 1}</span>
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 shrink-0">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => moveSlide(slide.id, "up")}
                                   disabled={index === 0}
+                                  className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                                 >
                                   ↑
                                 </Button>
@@ -428,6 +439,7 @@ export default function NewQuotePage() {
                                   size="sm"
                                   onClick={() => moveSlide(slide.id, "down")}
                                   disabled={index === formData.slides.length - 1}
+                                  className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                                 >
                                   ↓
                                 </Button>
@@ -435,14 +447,23 @@ export default function NewQuotePage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => setEditingSlideId(editingSlideId === slide.id ? null : slide.id)}
+                                  className="hidden sm:flex"
                                 >
                                   {editingSlideId === slide.id ? "Collapse" : "Edit"}
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => setEditingSlideId(editingSlideId === slide.id ? null : slide.id)}
+                                  className="sm:hidden h-8 w-8 p-0"
+                                >
+                                  {editingSlideId === slide.id ? "−" : "+"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => removeSlide(slide.id)}
-                                  className="text-destructive hover:text-destructive"
+                                  className="text-destructive hover:text-destructive h-8 w-8 p-0 sm:h-9 sm:w-9"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -682,15 +703,15 @@ export default function NewQuotePage() {
 
       {/* Flow Map View */}
       {activeView === "flow" && (
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-3 sm:p-6">
           <Card>
             <CardHeader>
-              <CardTitle>Quote Flow Map</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <CardTitle className="text-lg sm:text-xl">Quote Flow Map</CardTitle>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Visual representation of your quote&apos;s path logic and slide connections
               </p>
             </CardHeader>
-            <CardContent className="min-h-[500px]">
+            <CardContent className="min-h-[400px] sm:min-h-[500px]">
               <QuoteFlowMap slides={formData.slides} />
             </CardContent>
           </Card>
@@ -699,14 +720,14 @@ export default function NewQuotePage() {
 
       {/* Preview Mode */}
       {activeView === "preview" && (
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-background to-muted/20 py-12 px-4">
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-background to-muted/20 py-6 sm:py-12 px-3 sm:px-4">
           <div className="max-w-6xl mx-auto">
             {/* Progress Indicator */}
-            <div className="mb-8 flex items-center justify-center gap-2">
+            <div className="mb-6 sm:mb-8 flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto pb-2">
               {formData.slides.map((slide, index) => (
                 <div
                   key={slide.id}
-                  className={`h-2 w-12 rounded-full transition-all ${
+                  className={`h-2 w-8 sm:w-12 rounded-full transition-all shrink-0 ${
                     index === currentSlideIndex
                       ? "bg-primary"
                       : index < currentSlideIndex
@@ -721,16 +742,17 @@ export default function NewQuotePage() {
             {formData.slides[currentSlideIndex] && renderPreviewSlide(formData.slides[currentSlideIndex])}
 
             {/* Navigation */}
-            <div className="mt-8 flex items-center justify-center gap-4">
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Button
                 variant="outline"
                 onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
                 disabled={currentSlideIndex === 0}
+                className="w-full sm:w-auto"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground order-first sm:order-none">
                 {currentSlideIndex + 1} / {formData.slides.length}
               </span>
               <Button
@@ -739,6 +761,7 @@ export default function NewQuotePage() {
                   setCurrentSlideIndex(Math.min(formData.slides.length - 1, currentSlideIndex + 1))
                 }
                 disabled={currentSlideIndex === formData.slides.length - 1}
+                className="w-full sm:w-auto"
               >
                 Next
                 <ArrowRight className="h-4 w-4 ml-2" />

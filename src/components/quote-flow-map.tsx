@@ -252,39 +252,39 @@ export function QuoteFlowMap({ slides }: QuoteFlowMapProps) {
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 justify-center">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-100 border border-gray-300 rounded"></div>
-          <span className="text-sm">Intro</span>
+      <div className="flex flex-wrap gap-3 sm:gap-4 justify-center text-xs sm:text-sm">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-100 border border-gray-300 rounded shrink-0"></div>
+          <span>Intro</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-amber-100 border border-gray-300 rounded"></div>
-          <span className="text-sm">Choice</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-amber-100 border border-gray-300 rounded shrink-0"></div>
+          <span>Choice</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-100 border border-gray-300 rounded"></div>
-          <span className="text-sm">Add-on</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-100 border border-gray-300 rounded shrink-0"></div>
+          <span>Add-on</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-100 border border-gray-300 rounded"></div>
-          <span className="text-sm">Review</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-100 border border-gray-300 rounded shrink-0"></div>
+          <span>Review</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-0.5 bg-gray-400"></div>
-          <span className="text-sm">Default</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-6 sm:w-8 h-0.5 bg-gray-400 shrink-0"></div>
+          <span>Default</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-0.5 bg-blue-500"></div>
-          <span className="text-sm">Option A</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-6 sm:w-8 h-0.5 bg-blue-500 shrink-0"></div>
+          <span>Option A</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-0.5 bg-purple-500"></div>
-          <span className="text-sm">Option B</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-6 sm:w-8 h-0.5 bg-purple-500 shrink-0"></div>
+          <span>Option B</span>
         </div>
       </div>
 
       {/* Canvas */}
-      <div ref={containerRef} className="w-full overflow-auto border rounded-lg bg-white">
+      <div ref={containerRef} className="w-full overflow-auto border rounded-lg bg-white touch-pan-x touch-pan-y">
         <canvas ref={canvasRef} className="min-w-full" />
       </div>
 
