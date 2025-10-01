@@ -95,7 +95,7 @@ export default async function QuotesPage() {
           subtitle="Monitor bid/ask spreads, pin focus tickers, and export sheets for ops."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6 lg:gap-8 lg:px-6 xl:px-8 max-w-[1600px] mx-auto w-full">
+        <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:gap-4 sm:px-4 sm:py-4 lg:gap-6 lg:px-4 xl:px-6 2xl:px-8 w-full overflow-x-hidden">
           <div className="border-border/70 bg-card/95 rounded-lg border p-2 shadow-sm sm:rounded-2xl sm:p-4">
             <QuotesDataTable data={quotes} />
           </div>

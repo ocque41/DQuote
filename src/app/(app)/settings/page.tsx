@@ -55,7 +55,7 @@ export default async function SettingsPage() {
           subtitle="Manage your organization preferences and account settings."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-6 xl:px-8 max-w-[1400px] mx-auto w-full">
+        <div className="flex flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-4 lg:px-4 xl:px-6 2xl:px-8 w-full overflow-x-hidden">
           {/* Organization Settings */}
           <Card>
             <CardHeader>

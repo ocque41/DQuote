@@ -14,7 +14,7 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ title, subtitle, orgName }: SiteHeaderProps) {
   return (
-    <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
+    <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear bg-background backdrop-blur-sm sticky top-0 z-40">
       <div className="flex w-full items-center gap-3 px-4 lg:gap-4 lg:px-6">
         <SidebarTrigger className="-ml-1 h-8 w-8 hover:bg-accent hover:text-accent-foreground">
           <PanelLeft className="h-5 w-5" />
@@ -22,7 +22,7 @@ export function SiteHeader({ title, subtitle, orgName }: SiteHeaderProps) {
         </SidebarTrigger>
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <div className="flex flex-1 flex-col min-w-0">
-          <h1 className="text-base font-semibold leading-tight truncate">{title}</h1>
+          <h1 className="text-base font-semibold leading-tight truncate text-foreground">{title}</h1>
           {subtitle ? <p className="text-xs text-muted-foreground truncate">{subtitle}</p> : null}
         </div>
         <div className="ml-auto flex items-center gap-2">
