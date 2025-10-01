@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LayoutDashboard, FileText, BarChart3 } from "lucide-react";
 
 import { requireUser } from "@/auth/requireUser";
 import { getViewerContext } from "@/server/auth";
@@ -15,8 +14,8 @@ const navLinks = [
 ];
 
 const resourceLinks = [
-  { name: "Documentation", href: "#", icon: "book" as const },
-  { name: "Support", href: "#", icon: "life-buoy" as const }
+  { name: "Documentation", href: "#", icon: "notebook-pen" as const },
+  { name: "Support", href: "#", icon: "help-circle" as const }
 ];
 
 const secondaryLinks = [
