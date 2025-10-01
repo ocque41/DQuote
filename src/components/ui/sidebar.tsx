@@ -151,6 +151,7 @@ const SidebarProvider = React.forwardRef<
             "group/sidebar-wrapper has-[[data-variant=inset]]:bg-sidebar flex min-h-svh w-full",
             className,
           )}
+          data-sidebar-state={state}
           ref={ref}
           {...props}
         >

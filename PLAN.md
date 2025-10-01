@@ -1,3 +1,16 @@
+# SPRINT 22 PLAN
+
+## Item 1: Make the authenticated shell responsive to sidebar collapse
+
+- Ensure the shared `SidebarProvider` exposes collapse state to the layout grid so desktop content widens when the sidebar is collapsed to icon mode.
+- Extend automated coverage and contributor docs so the collapsed experience remains verified across primary dashboard routes.
+
+### Acceptance Criteria
+
+- [x] Collapsing the sidebar to icon mode on desktop widths immediately widens the main content grid (no lingering 20rem gap), verified manually or via Playwright.
+- [x] Updated Playwright suite asserts collapsed mode renders without horizontal overflow or hidden headings on `/dashboard` and `/items`.
+- [x] README or docs call out how to toggle the sidebar and run the new layout checks locally.
+
 # SPRINT 21 PLAN
 
 ## Item 1: Harden authenticated app shell layout & ergonomics

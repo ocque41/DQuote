@@ -22,5 +22,35 @@ for (const path of pages) {
       const tooltip = page.locator('[data-radix-tooltip-content], [role="tooltip"]');
       await expect(tooltip).toHaveCount(0);
     });
+
+    test(`layout @ ${width}px with sidebar collapsed: ${path}`, async ({ page, browserName }) => {
+      test.skip(browserName === "webkit" && width === 2560, "Skip if local runner cannot resize that wide");
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+
+      const provider = page.locator("[data-sidebar-state]");
+      const openTemplate = await provider.evaluate((el) => getComputedStyle(el).gridTemplateColumns);
+      const openFirstTrack = Number.parseFloat(openTemplate.split(" ")[0]);
+
+      await page.getByRole("button", { name: /toggle sidebar/i }).first().click();
+      await expect(provider).toHaveAttribute("data-sidebar-state", "collapsed");
+
+      const collapsedTemplate = await provider.evaluate((el) => getComputedStyle(el).gridTemplateColumns);
+      const collapsedFirstTrack = Number.parseFloat(collapsedTemplate.split(" ")[0]);
+
+      expect(collapsedTemplate).not.toBe(openTemplate);
+      expect(collapsedFirstTrack).toBeLessThan(openFirstTrack);
+
+      const h1 = page.getByRole("heading", { level: 1 });
+      await expect(h1).toBeVisible();
+
+      const hasHScroll = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(hasHScroll).toBeFalsy();
+
+      const tooltip = page.locator('[data-radix-tooltip-content], [role="tooltip"]');
+      await expect(tooltip).toHaveCount(0);
+    });
   }
 }
