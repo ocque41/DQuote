@@ -1,18 +1,10 @@
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { requireUser } from "@/auth/requireUser";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppShell } from "@/components/app-shell";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
-import {
-  mainNavigation,
-  resourceNavigation,
-  secondaryNavigation,
-} from "@/lib/navigation";
 import { getViewerContext } from "@/server/auth";
 
 import data from "./data.json";
@@ -94,34 +86,18 @@ export default async function DashboardPage() {
     redirect("/login?redirect=/dashboard");
   }
 
-  const userName = viewer.sessionUser.name ?? viewer.sessionUser.email;
-  const userEmail = viewer.sessionUser.email;
-
   return (
-    <SidebarProvider>
-      <AppSidebar
-        variant="inset"
-        orgName={viewer.org.name}
-        navMain={mainNavigation}
-        resources={resourceNavigation}
-        navSecondary={secondaryNavigation}
-        user={{ name: userName, email: userEmail }}
-      />
-      <SidebarInset className="bg-muted/20 min-w-0">
-        <SiteHeader
-          title="Pipeline overview"
-          subtitle="Track quote velocity, conversion, and collaboration health."
-          orgName={viewer.org.name}
-        />
-        <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:gap-4 sm:px-4 sm:py-4 lg:gap-6 lg:px-6 xl:px-8 2xl:px-10 max-w-[min(100%,theme(screens.4xl))] mx-auto w-full">
-          <SectionCards />
-          <ChartAreaInteractive />
-          <div className="border-border/70 bg-card/95 rounded-lg border p-2 shadow-sm sm:rounded-2xl sm:p-4 overflow-x-auto lg:overflow-x-visible">
-            <DataTable data={data} />
-          </div>
-        </div>
-      </SidebarInset>
-      <SidebarMobileToggle />
-    </SidebarProvider>
+    <AppShell
+      viewer={viewer}
+      title="Pipeline overview"
+      subtitle="Track quote velocity, conversion, and collaboration health."
+      contentClassName="gap-4 lg:gap-6"
+    >
+      <SectionCards />
+      <ChartAreaInteractive />
+      <div className="overflow-x-auto rounded-lg border border-border/70 bg-card/95 p-2 shadow-sm sm:rounded-2xl sm:p-4 lg:overflow-x-visible">
+        <DataTable data={data} />
+      </div>
+    </AppShell>
   );
 }

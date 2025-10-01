@@ -1,3 +1,16 @@
+# SPRINT 21 PLAN
+
+## Item 1: Harden authenticated app shell layout & ergonomics
+
+- Expand Tailwind breakpoints and container widths so dashboard routes remain fully visible from 1280px to 2560px with the sidebar open.
+- Rework the shared authenticated layout to use a fixed sidebar grid shell, ensure page titles remain legible, remove the sidebar toggle tooltip, and document the responsive strategy.
+
+### Acceptance Criteria
+
+- [x] `/dashboard` and `/items` render without horizontal scrolling between 1280px and 2560px viewports while the sidebar is open, confirmed manually or via Playwright.
+- [x] Authenticated page headers display a single readable `<h1>` with no overlapping decorative title layer, and the sidebar toggle no longer instantiates a tooltip.
+- [x] `docs/ui-layout.md` summarizes the responsive shell approach and new breakpoints so contributors can verify or extend the layout.
+
 # SPRINT 19 PLAN
 
 ## Item 1: Fix auth redirect loop when org records are missing
