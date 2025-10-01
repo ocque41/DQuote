@@ -60,7 +60,8 @@ export function AppSidebar({
   return (
     <Sidebar
       collapsible="icon"
-      className={cn("border-border/60 bg-sidebar border-r", className)}
+      variant="sidebar"
+      className={cn("bg-sidebar", className)}
       {...props}
     >
       <SidebarHeader>
