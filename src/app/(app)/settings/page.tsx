@@ -49,13 +49,13 @@ export default async function SettingsPage() {
           email: viewer.sessionUser.email,
         }}
       />
-      <SidebarInset className="bg-muted/20">
+      <SidebarInset className="bg-muted/20 min-w-0">
         <SiteHeader
           title="Settings"
           subtitle="Manage your organization preferences and account settings."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-4 lg:px-4 xl:px-6 2xl:px-8 w-full overflow-x-hidden">
+        <div className="flex flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-4 lg:px-6 xl:px-8 2xl:px-10 max-w-[min(100%,theme(screens.4xl))] mx-auto w-full">
           {/* Organization Settings */}
           <Card>
             <CardHeader>

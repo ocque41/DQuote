@@ -293,10 +293,10 @@ const SidebarTrigger = React.forwardRef<
         onClick?.(event);
         toggleSidebar();
       }}
+      aria-label={props["aria-label"] || "Toggle Sidebar"}
       {...props}
     >
       {children || <ViewVerticalIcon />}
-      <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
 });

@@ -83,7 +83,7 @@ export default async function ItemsPage() {
             email: viewer.sessionUser.email,
           }}
         />
-        <SidebarInset className="bg-muted/20">
+        <SidebarInset className="bg-muted/20 min-w-0">
           <SiteHeader
             title="Catalog Items"
             subtitle="Manage your product and service catalog for proposals."
@@ -121,13 +121,13 @@ export default async function ItemsPage() {
           email: viewer.sessionUser.email,
         }}
       />
-      <SidebarInset className="bg-muted/20">
+      <SidebarInset className="bg-muted/20 min-w-0">
         <SiteHeader
           title="Catalog Items"
           subtitle="Manage your product and service catalog for proposals."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-4 lg:px-4 xl:px-6 2xl:px-8 w-full overflow-x-hidden">
+        <div className="flex flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-4 lg:px-6 xl:px-8 2xl:px-10 max-w-[min(100%,theme(screens.4xl))] mx-auto w-full">
           {/* Header Actions */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-sm">
@@ -165,7 +165,7 @@ export default async function ItemsPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto lg:overflow-x-visible">
                   <Table>
                     <TableHeader>
                       <TableRow>
