@@ -127,7 +127,7 @@ export default async function ItemsPage() {
           subtitle="Manage your product and service catalog for proposals."
           orgName={viewer.org.name}
         />
-        <div className="flex flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-10">
+        <div className="flex flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-6 xl:px-8 max-w-[1600px] mx-auto w-full">
           {/* Header Actions */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-sm">
