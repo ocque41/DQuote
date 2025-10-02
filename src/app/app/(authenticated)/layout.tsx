@@ -39,7 +39,7 @@ export default async function AuthenticatedAppLayout({ children }: { children: R
   const displayName = viewer.orgUser.name ?? viewer.sessionUser.email ?? "Account";
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <AppSidebar
         orgName={viewer.org.name}
         navMain={navLinks}
@@ -50,17 +50,15 @@ export default async function AuthenticatedAppLayout({ children }: { children: R
           email: viewer.sessionUser.email
         }}
       />
-      <SidebarInset>
-        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background/90 backdrop-blur">
-          <div className="flex flex-1 items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="h-4 w-px bg-border" />
-            <Link href="/" className="text-xl font-semibold">
-              DQuote
-            </Link>
-          </div>
+      <SidebarInset className="flex flex-col">
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+          <SidebarTrigger className="-ml-1" />
+          <div className="h-4 w-px bg-border" />
+          <Link href="/" className="text-xl font-semibold">
+            DQuote
+          </Link>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
       </SidebarInset>
       <SidebarMobileToggle />
     </SidebarProvider>

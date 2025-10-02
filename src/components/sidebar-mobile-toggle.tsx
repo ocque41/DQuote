@@ -15,9 +15,10 @@ export function SidebarMobileToggle() {
       variant="default"
       size="icon"
       className={cn(
-        "fixed bottom-4 left-4 z-50 h-14 w-14 rounded-full shadow-lg md:hidden",
-        "hover:scale-110 transition-transform duration-200",
-        "bg-primary hover:bg-primary/90"
+        "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg md:hidden",
+        "hover:scale-110 active:scale-95 transition-transform duration-200",
+        "bg-primary hover:bg-primary/90",
+        openMobile && "bottom-6 right-6"
       )}
       onClick={toggleSidebar}
       aria-label="Toggle sidebar menu"
