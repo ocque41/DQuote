@@ -30,7 +30,7 @@ export function NavSecondary({
             const Icon = getSidebarIcon(item.icon);
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip={item.title}>
                   <Link href={item.href}>
                     <Icon />
                     <span>{item.title}</span>

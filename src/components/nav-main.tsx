@@ -33,8 +33,8 @@ export function NavMain({
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                  <Link href={item.href} className="flex items-center gap-2">
-                    {Icon ? <Icon className="size-4" /> : null}
+                  <Link href={item.href}>
+                    {Icon ? <Icon /> : null}
                     <span>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>

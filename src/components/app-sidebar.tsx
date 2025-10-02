@@ -60,7 +60,7 @@ export function AppSidebar({
   return (
     <Sidebar
       collapsible="icon"
-      variant="sidebar"
+      variant="inset"
       className={cn("bg-sidebar", className)}
       {...props}
     >
@@ -69,10 +69,11 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              tooltip={orgName}
+              size="lg"
             >
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <ArrowUpCircleIcon className="h-5 w-5 shrink-0" />
+              <Link href="/dashboard">
+                <ArrowUpCircleIcon />
                 <span className="text-base font-semibold truncate">{orgName}</span>
               </Link>
             </SidebarMenuButton>
