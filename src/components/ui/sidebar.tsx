@@ -226,15 +226,18 @@ const Sidebar = React.forwardRef<
     return (
       <aside
         ref={ref}
+        style={{
+          width: state === "collapsed"
+            ? (collapsible === "offcanvas" ? "0"
+              : (variant === "floating" || variant === "inset"
+                ? "calc(var(--sidebar-width-icon) + 1rem)"
+                : "var(--sidebar-width-icon)"))
+            : "var(--sidebar-width)"
+        }}
         className={cn(
           "group peer text-sidebar-foreground hidden md:flex",
           "sticky top-0 h-screen shrink-0 flex-col overflow-hidden",
           "transition-[width] duration-200 ease-linear",
-          // Width states
-          state === "expanded" && "w-[var(--sidebar-width)]",
-          state === "collapsed" && collapsible === "offcanvas" && "w-0",
-          state === "collapsed" && collapsible === "icon" && variant === "sidebar" && "w-[var(--sidebar-width-icon)]",
-          state === "collapsed" && collapsible === "icon" && (variant === "floating" || variant === "inset") && "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]",
           className,
         )}
         data-state={state}
