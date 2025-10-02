@@ -228,7 +228,7 @@ const Sidebar = React.forwardRef<
         ref={ref}
         className={cn(
           "group peer text-sidebar-foreground hidden md:flex",
-          "sticky top-0 h-screen shrink-0 flex-col",
+          "sticky top-0 h-screen shrink-0 flex-col overflow-hidden",
           "w-[--sidebar-width] transition-[width] duration-200 ease-linear",
           // Collapsed states
           state === "collapsed" && collapsible === "offcanvas" && "w-0",
@@ -245,7 +245,7 @@ const Sidebar = React.forwardRef<
         <div
           data-sidebar="sidebar"
           className={cn(
-            "bg-sidebar border-sidebar-border flex h-full w-full flex-col border-r",
+            "bg-sidebar border-sidebar-border flex h-full w-full flex-col border-r overflow-hidden",
             variant === "floating" && "m-2 rounded-lg border shadow",
             variant === "inset" && "m-2 rounded-lg border shadow",
           )}
