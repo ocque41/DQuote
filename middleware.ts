@@ -1,27 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getStackServerApp } from "@/stack/server";
 
+// Protects authenticated app pages while keeping marketing/auth public
 export async function middleware(request: NextRequest) {
-  console.log(`[MIDDLEWARE TEST] Path: ${request.nextUrl.pathname}`);
+  const { pathname } = request.nextUrl;
 
-  // Simple test: redirect everything except login/signup to login
-  if (request.nextUrl.pathname === "/test-protected-route") {
-    console.log("[MIDDLEWARE TEST] Redirecting test route to login");
-    return NextResponse.redirect(new URL("/login", request.url));
+  // Public routes
+  const isPublic =
+    pathname.startsWith("/docs") ||
+    pathname.startsWith("/support") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname === "/";
+
+  // Static assets/images are excluded by matcher below
+  if (isPublic) {
+    return NextResponse.next();
   }
 
-  console.log(`[MIDDLEWARE TEST] Allowing: ${request.nextUrl.pathname}`);
+  // Auth-required app pages
+  const requiresAuth =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/quotes") ||
+    pathname.startsWith("/items") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/admin");
+
+  if (!requiresAuth) {
+    return NextResponse.next();
+  }
+
+  const stack = getStackServerApp();
+  const user = await stack.getUser({ or: "return-null" });
+  if (!user) {
+    const url = new URL("/login", request.url);
+    url.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - Marketing routes are handled by allowing them through in the middleware logic above
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)"
-  ]
+    "/((?!_next/static|_next/image|favicon.ico|api|assets|robots.txt|sitemap.xml).*)",
+  ],
 };
