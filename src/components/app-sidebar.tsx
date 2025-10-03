@@ -72,7 +72,7 @@ export function AppSidebar({
               tooltip={orgName}
               size="lg"
             >
-              <Link href="/dashboard">
+              <Link href="/app">
                 <ArrowUpCircleIcon />
                 <span className="text-base font-semibold truncate">{orgName}</span>
               </Link>

@@ -21,9 +21,10 @@ import { ViewVerticalIcon } from "@radix-ui/react-icons";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = "20rem";
-const SIDEBAR_WIDTH_MOBILE = "18rem";
-const SIDEBAR_WIDTH_ICON = "3rem";
+// Width tokens adjusted per design request
+const SIDEBAR_WIDTH = "15rem"; // w-60
+const SIDEBAR_WIDTH_MOBILE = "15rem"; // full-width default feel in drawer
+const SIDEBAR_WIDTH_ICON = "4rem"; // room to keep labels visible unless collapsed
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContextProps = {
@@ -205,13 +206,13 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="bg-sidebar text-sidebar-foreground w-[--sidebar-width] p-0 [&>button]:hidden"
+            className="bg-sidebar text-sidebar-foreground w-[--sidebar-width] p-0 [&>button]:hidden data-[state=open]:!bottom-0 data-[state=open]:!top-auto"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               } as React.CSSProperties
             }
-            side={side}
+            side="bottom"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Sidebar</SheetTitle>
@@ -251,7 +252,7 @@ const Sidebar = React.forwardRef<
           className={cn(
             "bg-sidebar border-sidebar-border flex h-full w-full flex-col border-r overflow-hidden",
             variant === "floating" && "m-2 rounded-lg border shadow",
-            variant === "inset" && "m-2 rounded-lg border shadow",
+            variant === "inset" && "border-r-0",
           )}
         >
           {children}

@@ -26,13 +26,7 @@ export function AppShell({
   contentClassName,
 }: AppShellProps) {
   return (
-    <SidebarProvider
-      className={cn(
-        "min-h-dvh flex flex-col lg:grid lg:grid-cols-[var(--sidebar-width)_1fr] xl:grid-cols-[18rem_1fr]",
-        "data-[sidebar-state=collapsed]:lg:grid-cols-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))_1fr]",
-        "data-[sidebar-state=collapsed]:xl:grid-cols-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))_1fr]",
-      )}
-    >
+    <SidebarProvider className={cn("min-h-screen flex")}> 
       <AppSidebar
         variant="inset"
         orgName={viewer.org.name}
@@ -44,12 +38,12 @@ export function AppShell({
           email: viewer.sessionUser.email,
         }}
       />
-      <SidebarInset className="bg-muted/20 min-w-0 flex flex-col">
+      <SidebarInset className="bg-background min-w-0 flex flex-col">
         <SiteHeader title={title} subtitle={subtitle} orgName={viewer.org.name} />
         <div
           data-testid="app-shell-content"
           className={cn(
-            "mx-auto flex w-full flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 xl:px-8 2xl:px-10 3xl:px-12 max-w-[min(100%,theme(screens.4xl))]",
+            "mx-auto flex w-full flex-1 flex-col gap-6 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 xl:px-8 2xl:px-10 max-w-[min(100%,theme(screens.4xl))]",
             contentClassName,
           )}
         >
