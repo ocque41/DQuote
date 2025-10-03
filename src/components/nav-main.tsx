@@ -35,7 +35,9 @@ export function NavMain({
                 <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                   <Link href={item.href}>
                     {Icon ? <Icon /> : null}
-                    <span className="whitespace-nowrap">{item.title}</span>
+                    <span className="whitespace-nowrap group-data-[sidebar-state=collapsed]/sidebar-wrapper:hidden">
+                      {item.title}
+                    </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

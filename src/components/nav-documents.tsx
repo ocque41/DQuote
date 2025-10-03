@@ -43,7 +43,9 @@ export function NavDocuments({
               <SidebarMenuButton asChild>
                 <Link href={item.href}>
                   <Icon />
-                  <span>{item.name}</span>
+                  <span className="group-data-[sidebar-state=collapsed]/sidebar-wrapper:hidden">
+                    {item.name}
+                  </span>
                 </Link>
               </SidebarMenuButton>
               <DropdownMenu>
@@ -77,7 +79,7 @@ export function NavDocuments({
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
             <MoreHorizontalIcon className="text-sidebar-foreground/70" />
-            <span>More</span>
+            <span className="group-data-[sidebar-state=collapsed]/sidebar-wrapper:hidden">More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

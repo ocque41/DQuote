@@ -33,7 +33,9 @@ export function NavSecondary({
                 <SidebarMenuButton asChild tooltip={item.title}>
                   <Link href={item.href}>
                     <Icon />
-                    <span>{item.title}</span>
+                    <span className="group-data-[sidebar-state=collapsed]/sidebar-wrapper:hidden">
+                      {item.title}
+                    </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
