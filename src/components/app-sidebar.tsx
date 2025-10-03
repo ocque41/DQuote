@@ -60,7 +60,7 @@ export function AppSidebar({
   return (
     <Sidebar
       collapsible="icon"
-      variant="inset"
+      variant="sidebar"
       className={cn("bg-sidebar", className)}
       {...props}
     >
