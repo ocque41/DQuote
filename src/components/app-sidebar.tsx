@@ -80,7 +80,7 @@ export function AppSidebar({
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col gap-0">
+      <SidebarContent>
         <NavMain items={navMain} />
         <NavDocuments items={resources} />
         <NavSecondary items={navSecondary} className="mt-auto" />
