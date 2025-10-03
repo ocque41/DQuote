@@ -212,7 +212,7 @@ export function ItemDialog({ open, onOpenChange, item }: ItemDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-black">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Edit Item" : "Create New Item"}</DialogTitle>
           <DialogDescription>
