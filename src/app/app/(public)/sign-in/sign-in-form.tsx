@@ -6,7 +6,8 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-6 py-12">
       <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-sm">
-        <SignIn fullPage={false} automaticRedirect extraInfo={<RedirectHint redirectTo={redirectTo} />} />
+        <SignIn fullPage={false} />
+        <RedirectHint redirectTo={redirectTo} />
       </div>
     </div>
   );

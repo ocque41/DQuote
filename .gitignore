@@ -19,6 +19,16 @@ coverage
 # OS
 .DS_Store
 
+# Codex CLI (local config may contain secrets)
+.codex/
+codex/
+codex.yaml
+codex.yml
+codex.toml
+.codex.yaml
+.codex.yml
+.codex.toml
+
 # Prisma
 prisma/*.db
 prisma/migrations/*/migration_lock.toml
@@ -28,3 +38,4 @@ prisma/migrations/*/migration_lock.toml
 .idea
 
 /src/generated/prisma
+codex-mcp-config.toml.snippet

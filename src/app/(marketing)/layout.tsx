@@ -19,11 +19,13 @@ export default async function MarketingLayout({
 }: {
   children: ReactNode;
 }) {
-  const stackApp = getStackServerApp();
-  let user: Awaited<ReturnType<typeof stackApp.getUser>> | null = null;
+  let user = null;
 
   try {
-    user = await stackApp.getUser({ or: "return-null" });
+    // Note: getUser is available at runtime but TypeScript types are incomplete
+    // This pattern is used throughout the codebase (see requireUser.ts, api-auth.ts)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    user = await (getStackServerApp() as any).getUser({ or: "return-null" });
   } catch (error) {
     console.error(
       "Failed to load Neon Auth session for marketing layout",

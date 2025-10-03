@@ -113,22 +113,39 @@ model Client {
 }
 
 model CatalogItem {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   orgId       String
-  org         Org      @relation(fields: [orgId], references: [id])
-  code        String?  @unique
+  org         Org           @relation(fields: [orgId], references: [id])
+  code        String?       @unique
   name        String
   description String?
-  unit        String? // "unit", "hour", etc.
-  unitPrice   Decimal  @db.Decimal(12, 2)
-  currency    String   @default("EUR")
-  active      Boolean  @default(true)
+  unit        String?       // "unit", "hour", etc.
+  unitPrice   Decimal       @db.Decimal(12, 2)
+  currency    String        @default("EUR")
+  active      Boolean       @default(true)
   tags        String[]
   assets      Asset[]
   options     Option[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  variants    ItemVariant[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
+  @@schema("public")
+}
+
+model ItemVariant {
+  id            String      @id @default(uuid())
+  catalogItemId String
+  catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  imageUrl      String?
+  priceOverride Decimal?    @db.Decimal(12, 2)
+  position      Int         // 0 or 1 for ordering variant A/B
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([catalogItemId, position])
   @@schema("public")
 }
 

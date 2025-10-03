@@ -1,48 +1,19 @@
 # Repository Guidelines
 
-> Agent and contributor reference for DQuote (Next.js + Prisma + Tailwind).
-
 ## Project Structure & Module Organization
-- App routes and UI: `src/app/...` (Next.js App Router). Example: `src/app/(app)/quotes/page.tsx`.
-- Components and hooks: `src/components/**`, `src/hooks/**`.
-- Server logic: `src/server/**` (auth, pricing, pdf, email).
-- Domain libs: `src/lib/**` (utils, currency, data, navigation).
-- Auth helpers: `src/auth/**`; middleware in `middleware.ts`.
-- Database: `prisma/schema.prisma`, migrations in `prisma/migrations/**`, seed in `prisma/seed.ts`.
-- Tests: minimal targeted tests under `src/server/**` and `tests/**`.
-- Config: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `prettier.config.mjs`, `tailwind.config.ts`.
+Keep UI routes under `src/app/**` using the App Router, e.g. `src/app/(app)/quotes/page.tsx`. Shared components and hooks live in `src/components/**` and `src/hooks/**`; server-only logic belongs in `src/server/**`. Domain utilities reside in `src/lib/**`, while authentication helpers stay under `src/auth/**` with middleware in `middleware.ts`. Database assets are managed through `prisma/schema.prisma`, `prisma/migrations/**`, and `prisma/seed.ts`. Place focused tests next to modules or under `tests/**`.
 
 ## Build, Test, and Development Commands
-- `npm run dev` — Start Next.js dev server.
-- `npm run build` — Build app (runs `prisma generate` via `prebuild`).
-- `npm start` — Run production server.
-- `npm run lint` — ESLint via Next config.
-- `npm run format` — Prettier with Tailwind plugin.
-- `npm run test:pricing` — TS test for pricing rules.
-- Prisma: `npm run migrate:create`, `npm run migrate:apply`, `npx prisma studio`.
+Use `npm run dev` for the Next.js dev server, and `npm run build` to create a production bundle (automatically runs `prisma generate`). Start the built app with `npm start`. Lint and format prior to PRs via `npm run lint` and `npm run format`. Execute targeted pricing tests with `npm run test:pricing`; invoke Prisma workflows with `npm run migrate:create`, `npm run migrate:apply`, and `npx prisma studio`.
 
 ## Coding Style & Naming Conventions
-- TypeScript, React 19, Next 15; Tailwind v4 for styling.
-- Indentation: 2 spaces; prefer named exports.
-- Filenames: kebab-case for files, PascalCase for React components.
-- Components in `src/components/ui/**` mirror shadcn patterns.
-- Linting: ESLint (`npm run lint`); Formatting: Prettier (`npm run format`).
-- Keep server-only code in `src/server/**`; avoid importing server modules in client components.
+Write TypeScript/React with 2-space indentation and prefer named exports. Follow Next.js 15, React 19, and Tailwind v4 patterns; UI components mirror shadcn style under `src/components/ui/**`. Use kebab-case filenames, PascalCase React components, and run the Prettier + Tailwind formatter through `npm run format`.
 
 ## Testing Guidelines
-- Use `tsx`-run TS tests (see `src/server/pricing/rules.test.ts`).
-- Place unit tests next to modules or under `tests/**`.
-- Name tests `*.test.ts` or `*.spec.ts[x]`.
-- Aim to cover pricing rules, auth guards, and critical data transforms.
+Tests rely on tsx-run; keep naming `*.test.ts` or `*.spec.tsx`. Prioritize pricing rules, auth guards, and critical data transforms. Run suites with `npm run test:pricing`, and add new tests alongside the code they cover. Investigate failures before re-running to maintain fast feedback.
 
 ## Commit & Pull Request Guidelines
-- Commits: concise, imperative subject; scope in parentheses when relevant.
-  - Example: `feat(quotes): add bulk select to table`.
-- Include rationale in body when changing behavior or schema.
-- PRs: clear description, linked issues, screenshots for UI, and steps to validate.
-- For schema changes, include migration and update `prisma/seed.ts` if needed.
+Commit messages follow `<type>(<scope>): <imperative summary>` such as `feat(quotes): add bulk select to table`. PRs must describe rationale, link relevant issues, and include UI screenshots when behavior changes. Ensure migrations accompany schema edits and update `prisma/seed.ts` as needed.
 
 ## Security & Configuration Tips
-- Copy `.env.example` to `.env`. Never commit secrets.
-- Stripe and auth callbacks live under `src/app/api/**`; validate inputs with `zod`.
-- When adding server routes, use App Router handlers and keep side effects isolated.
+Copy `.env.example` to `.env` locally and avoid committing secrets. Validate inputs in `src/app/api/**` with `zod`, and isolate side effects within server handlers. Respect sandbox boundaries; escalate commands only when necessary.

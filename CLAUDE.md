@@ -12,10 +12,11 @@ DQuote is an interactive proposal experience that blends CPQ (Configure, Price, 
 
 ### Essential Commands
 - `pnpm dev` - Start development server
-- `pnpm build` - Production build with Prisma client generation
+- `pnpm build` - Production build with Prisma migration deploy + client generation
+- `pnpm start` - Run production build locally
 - `pnpm lint` - Lint code with Next.js config
-- `pnpm format` - Format code with Prettier and Tailwind plugin
-- `pnpm test:pricing` - Run pricing engine unit tests
+- `pnpm format` - Format code with Prettier and Tailwind plugin (includes src/, PLAN.md, README.md, WORKLOG.md)
+- `pnpm test:pricing` - Run pricing engine unit tests via tsx
 
 ### Database & Prisma
 - `pnpm run migrate:create -- --name <name>` - Generate new migration (requires DIRECT_URL)
@@ -23,7 +24,7 @@ DQuote is an interactive proposal experience that blends CPQ (Configure, Price, 
 - `pnpm exec prisma db seed` - Seed demo data
 - `pnpm studio` - Open Prisma Studio
 
-**Note**: Migrations are NOT automatically applied during build. For production deployments, run migrations separately before deploying.
+**Note**: `pnpm build` now runs `prisma migrate deploy` before `next build` via the `prebuild` script. Ensure `DATABASE_URL` and `DIRECT_URL` (when required) point to the correct database before building.
 
 ### Component System
 - `./scripts/add-ui.sh <component>` - Install shadcn/ui component from local registry
@@ -51,6 +52,8 @@ DQuote is an interactive proposal experience that blends CPQ (Configure, Price, 
 - **Email**: `nodemailer`
 - **Styling**: `tailwindcss`, `class-variance-authority`, `tailwind-merge`
 - **Animation**: `framer-motion`, `tailwindcss-animate`
+- **Drag & Drop**: `@dnd-kit/core`, `@dnd-kit/sortable` for reordering UI
+- **Data Tables**: `@tanstack/react-table` for complex table features
 
 ## Architecture Overview
 
@@ -211,7 +214,8 @@ pnpm dev
 ## Testing & Demo Data
 
 ### Test Coverage
-- **Pricing Engine**: Comprehensive unit tests in `rules.test.ts`
+- **Pricing Engine**: Comprehensive unit tests in `rules.test.ts` (run via `pnpm test:pricing`)
+- **E2E Tests**: Playwright tests for layout/sidebar (`pnpm exec playwright test tests/ui/layout.spec.ts`)
 - **Development**: Manual testing via `/proposals/dq-demo-aurora`
 - **Stripe**: Use test keys and Stripe CLI for webhook testing
 
@@ -220,14 +224,17 @@ pnpm dev
 - **Demo Proposal**: `dq-demo-aurora` with full slide flow
 - **Test Credentials**: `founder@aurora.events` / `dquote-demo`
 - **Expired Link**: `dq-demo-expired` for testing expiration handling
+- **First User Auto-provisioning**: First authenticated user automatically gets a default workspace (org) with admin access
 
 ## File Upload & Storage
 
 ### Vercel Blob Integration
 - **Environment**: `BLOB_READ_WRITE_TOKEN` required
-- **Endpoints**: `/api/blob/upload` and `/api/avatar/upload`
+- **Endpoints**: `/api/blob/upload` (multipart form upload) and `/api/avatar/upload` (streaming upload with filename query param)
 - **PDF Storage**: Generated receipts stored with public URLs
 - **Demo Page**: `/avatar/upload` for testing blob functionality
+- **Size Limits**: 4.5 MB server upload limit for avatar/image uploads
+- **Testing**: Use curl to verify blob upload endpoints work correctly
 
 ## Security Considerations
 
@@ -237,6 +244,14 @@ pnpm dev
 - **File Uploads**: Size limits and type validation on blob uploads
 - **Session Management**: Secure database session storage
 - **Environment Variables**: Sensitive data in .env.local only
+
+## Important Project Policies
+
+### Binary Assets
+The project intentionally ships without binary image assets (including the default Next.js favicon) to maintain compatibility with "no binary files" workflow guardrails. When scaffolding new features:
+- Replace media with text-based placeholders (SVG-as-text, data URIs)
+- Or host assets externally
+- Avoid committing binary files in pull requests
 
 ## Recent Changes (Sprint 10+)
 
