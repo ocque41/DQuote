@@ -4,7 +4,7 @@ import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState, useTr
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 
 import { EventType } from "@prisma/client";
@@ -136,7 +136,7 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
   const [summaryDelta, setSummaryDelta] = useState<{ label: string; amount: number; expiresAt: number } | null>(null);
   const loggedPortfolioSlidesRef = useRef<Set<string>>(new Set());
   const acceptanceForm = useForm<AcceptanceFormValues>({
-    resolver: zodResolver(ACCEPTANCE_SCHEMA),
+    resolver: zodResolver(ACCEPTANCE_SCHEMA) as Resolver<AcceptanceFormValues>,
     mode: "onChange",
     defaultValues: {
       name: props.quoteStatus?.acceptedByName ?? "",

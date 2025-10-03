@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Plus, Upload, X } from "lucide-react";
@@ -87,20 +87,30 @@ export function ItemDialog({ open, onOpenChange, item }: ItemDialogProps) {
   const isEditMode = !!item;
 
   const form = useForm<ItemFormValues>({
-    resolver: zodResolver(itemFormSchema),
+    resolver: zodResolver(itemFormSchema) as Resolver<ItemFormValues>,
     defaultValues: item
       ? {
           name: item.name,
-          description: item.description || "",
-          code: item.code || "",
-          unit: item.unit || "",
+          description: item.description ?? "",
+          code: item.code ?? "",
+          unit: item.unit ?? "",
           unitPrice: Number(item.unitPrice),
           currency: item.currency,
           active: item.active,
-          tags: item.tags?.join(", ") || "",
-          variants: item.variants?.length > 0
-            ? item.variants
-            : [{ name: "", description: "", imageUrl: "", position: 0 }],
+          tags: item.tags?.join(", ") ?? "",
+          variants:
+            item.variants && item.variants.length > 0
+              ? item.variants.map((variant, index) => ({
+                  name: variant.name,
+                  description: variant.description ?? "",
+                  imageUrl: variant.imageUrl ?? "",
+                  priceOverride:
+                    typeof variant.priceOverride === "number"
+                      ? Number(variant.priceOverride)
+                      : undefined,
+                  position: typeof variant.position === "number" ? variant.position : index,
+                }))
+              : [{ name: "", description: "", imageUrl: "", position: 0, priceOverride: undefined }],
         }
       : {
           name: "",
@@ -111,7 +121,7 @@ export function ItemDialog({ open, onOpenChange, item }: ItemDialogProps) {
           currency: "EUR",
           active: true,
           tags: "",
-          variants: [{ name: "", description: "", imageUrl: "", position: 0 }],
+          variants: [{ name: "", description: "", imageUrl: "", position: 0, priceOverride: undefined }],
         },
   });
 
@@ -149,7 +159,7 @@ export function ItemDialog({ open, onOpenChange, item }: ItemDialogProps) {
     if (currentVariants.length < 2) {
       form.setValue("variants", [
         ...currentVariants,
-        { name: "", description: "", imageUrl: "", position: currentVariants.length },
+        { name: "", description: "", imageUrl: "", position: currentVariants.length, priceOverride: undefined },
       ]);
     }
   };

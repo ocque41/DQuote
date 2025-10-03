@@ -8,6 +8,7 @@ function resolveHandler() {
   if (!handlerPromise) {
     handlerPromise = StackHandler({
       app: getStackServerApp(),
+      fullPage: true,
     });
   }
 
