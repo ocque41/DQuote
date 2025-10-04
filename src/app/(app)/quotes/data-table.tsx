@@ -62,7 +62,6 @@ interface QuotesDataTableProps {
 
 export function QuotesDataTable({ data }: QuotesDataTableProps) {
   const router = useRouter();
-  const [tableData, setTableData] = React.useState(() => data);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -76,7 +75,7 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
   });
 
   const table = useReactTable({
-    data: tableData,
+    data,
     columns,
     state: {
       sorting,
