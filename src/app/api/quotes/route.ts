@@ -21,6 +21,7 @@ const SlideSchema = z.object({
   type: z.enum(["intro", "choice", "addon", "review"]),
   position: z.number(),
   catalogItemId: z.string().uuid().optional(),
+  catalogItemName: z.string().optional(),
   optionA: SlideOptionSchema.optional(),
   optionB: SlideOptionSchema.optional(),
 });
