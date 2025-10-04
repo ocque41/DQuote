@@ -13,8 +13,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import type { Quote } from "@/app/app/(authenticated)/quotes/schema";
-import { columns } from "@/app/app/(authenticated)/quotes/columns";
+import type { Quote } from "./schema";
+import { columns } from "./columns";
 import { QuoteFilters } from "@/components/quote-filters";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,7 +117,7 @@ export function QuotesDataTable({ data }: QuotesDataTableProps) {
         table={table}
         searchValue={globalFilter}
         onSearchChange={setGlobalFilter}
-        onCreate={() => router.push("/app/quotes/new")}
+        onCreate={() => router.push("/quotes/new")}
         onExport={handleExport}
       />
       <div className="rounded-lg border">

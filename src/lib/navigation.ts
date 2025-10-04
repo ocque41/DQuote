@@ -13,6 +13,7 @@ export const mainNavigation = [
   { title: "Dashboard", href: "/dashboard", icon: "layout-dashboard" },
   { title: "Quotes", href: "/quotes", icon: "file-text" },
   { title: "Items", href: "/items", icon: "package" },
+  { title: "Proposals", href: "/proposals", icon: "presentation" },
 ] as const satisfies ReadonlyArray<{
   title: string;
   href: string;

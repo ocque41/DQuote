@@ -6,7 +6,7 @@ DQuote is an interactive proposal experience that blends CPQ logic, curated slid
 
 - **Next.js 15 App Router** with server components, route groups for marketing vs. application surfaces, and Route Handlers for APIs.
 - **Prisma** data model targeting Neon Postgres (manual SQL migration generated via `prisma migrate diff`).
-- **Neon Auth (Stack)** with App Router provider + handler, syncing users into `neon_auth.users_sync` and gating `/app` + `/admin` via middleware and server utilities.
+- **Neon Auth (Stack)** with App Router provider + handler, syncing users into `neon_auth.users_sync` and gating authenticated workspace routes (`/dashboard`, `/items`, `/quotes`, `/proposals`) plus `/admin` via middleware and server utilities.
 - **React Query + Server Actions** for optimistic selection updates and analytics logging.
 - **Stripe Checkout** (App Router handler) for deposit payments.
 - **shadcn/ui** components sourced from a custom local registry (`registry/*.json`).
@@ -38,7 +38,7 @@ pnpm build
 > Make sure `DATABASE_URL` (and `DIRECT_URL` when required) point at the database
 > you intend to migrate before running the command locally or in CI.
 
-Visit `http://localhost:3000/` for the marketing site, `/app` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
+Visit `http://localhost:3000/` for the marketing site, `/dashboard` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.
 
@@ -105,7 +105,7 @@ Run `pnpm prisma generate` whenever you edit `prisma/schema.prisma` so that the 
 
 - Enable Neon Auth (beta) for your Neon project and copy the **Next.js** keys into `.env.local` / Vercel (`NEXT_PUBLIC_STACK_PROJECT_ID`, `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`).
 - Prisma exposes `neon_auth.users_sync` via the `NeonAuthUser` model. The first authenticated account automatically seeds an `OrgMember` linked to the Aurora Events org; run `SELECT id, email FROM neon_auth.users_sync ORDER BY created_at DESC LIMIT 5;` in Neon to verify new sign-ups.
-- The default Stack routes live under `/handler/[...stack]` (sign-in, sign-up, sign-out). Configure the "After sign-in" target in the Neon Auth dashboard to `/app` so contributors land on the internal workspace after authentication.
+- The default Stack routes live under `/handler/[...stack]` (sign-in, sign-up, sign-out). Configure the "After sign-in" target in the Neon Auth dashboard to `/dashboard` so contributors land on the internal workspace after authentication.
 - Generate a Vercel Blob read/write token (`BLOB_READ_WRITE_TOKEN`) in the Vercel dashboard and scope it to the bucket where proposal receipts should live.
 
 ### Optional: Neon RLS (JWT/JWKS)

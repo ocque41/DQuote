@@ -5,7 +5,7 @@ import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { ExternalLinkIcon, MoreHorizontalIcon, CopyIcon } from "lucide-react";
 
-import type { Quote } from "@/app/app/(authenticated)/quotes/schema";
+import type { Quote } from "./schema";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";

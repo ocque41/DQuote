@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { MoreHorizontalIcon, ExternalLinkIcon, CopyIcon } from "lucide-react";
 
-import type { Quote } from "@/app/app/(authenticated)/quotes/schema";
+import type { Quote } from "@/app/(app)/quotes/schema";
 
 interface QuoteActionsProps {
   quote: Quote;

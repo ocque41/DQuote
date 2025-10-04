@@ -149,8 +149,9 @@ class AuthTester {
   async testProtectedRoutes() {
     const protectedRoutes = [
       '/dashboard',
-      '/app',
-      '/app/proposals'
+      '/items',
+      '/quotes',
+      '/proposals'
       // Note: /admin route doesn't exist yet, which is expected
     ];
 

@@ -7,7 +7,7 @@ import { getViewerContext } from "@/server/auth";
 import { NewQuoteBuilder } from "./new-quote-builder";
 
 export default async function NewQuotePage() {
-  const session = await requireUser({ returnTo: "/app/quotes/new" });
+  const session = await requireUser({ returnTo: "/quotes/new" });
 
   if ("redirect" in session) {
     redirect(session.redirect);
@@ -16,7 +16,7 @@ export default async function NewQuotePage() {
   const viewer = await getViewerContext(session.user);
 
   if (!viewer) {
-    redirect("/handler/sign-in?redirect=/app/quotes/new");
+    redirect("/handler/sign-in?redirect=/quotes/new");
   }
 
   return (

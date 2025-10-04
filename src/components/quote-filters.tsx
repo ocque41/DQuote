@@ -4,7 +4,7 @@ import * as React from "react";
 import { type Table } from "@tanstack/react-table";
 import { DownloadIcon, PlusCircleIcon, SearchIcon, XIcon } from "lucide-react";
 
-import type { Quote } from "@/app/app/(authenticated)/quotes/schema";
+import type { Quote } from "@/app/(app)/quotes/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

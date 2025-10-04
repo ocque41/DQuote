@@ -27,7 +27,7 @@ This guide provides step-by-step manual testing procedures to validate the compl
 - ✅ Signup page loads without errors
 - ✅ Form accepts valid email/password
 - ✅ User is automatically logged in after registration
-- ✅ Redirected to `/dashboard` or `/app`
+- ✅ Redirected to `/dashboard`
 - ✅ Dashboard shows user-specific content
 
 ### Test 1.2: Registration Input Validation
@@ -115,9 +115,10 @@ This guide provides step-by-step manual testing procedures to validate the compl
 **Objective**: Verify all app routes require authentication
 
 **Protected Routes to Test**:
-- `/app`
-- `/app/proposals`
 - `/dashboard`
+- `/items`
+- `/quotes`
+- `/proposals`
 
 **Steps** (for each route):
 1. Log out completely

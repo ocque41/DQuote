@@ -260,7 +260,7 @@ export function NewQuoteBuilder() {
       const result = await response.json();
 
       // Redirect to quotes list or to the proposal view
-      router.push(`/app/quotes?success=created&shareId=${result.proposal.shareId}`);
+      router.push(`/quotes?success=created&shareId=${result.proposal.shareId}`);
     } catch (error) {
       console.error("Error saving quote:", error);
       alert(error instanceof Error ? error.message : "Failed to save quote");

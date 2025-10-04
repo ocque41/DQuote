@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function QuotesPage() {
-  const session = await requireUser({ returnTo: "/app/quotes" });
+  const session = await requireUser({ returnTo: "/quotes" });
 
   if ("redirect" in session) {
     redirect(session.redirect);
@@ -23,7 +23,7 @@ export default async function QuotesPage() {
   const viewer = await getViewerContext(session.user);
 
   if (!viewer) {
-    redirect("/handler/sign-in?redirect=/app/quotes");
+    redirect("/handler/sign-in?redirect=/quotes");
   }
 
   let quotes: Quote[] = [];

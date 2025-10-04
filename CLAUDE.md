@@ -82,7 +82,7 @@ src/app/
 ### Authentication & Authorization
 - **Neon Auth (Stack)** with Next.js provider and Prisma integration
 - **Multi-provider** authentication with credential and OAuth options
-- **Middleware Protection**: Routes under `/app/*` and `/admin/*` (see `middleware.ts`)
+- **Middleware Protection**: Authenticated workspace routes (`/dashboard`, `/items`, `/quotes`, `/proposals`) and `/admin/*` (see `middleware.ts`)
 - **Organization-based**: Multi-tenant with org-scoped data access
 - **Session Strategy**: Stack-managed sessions with role information
 
