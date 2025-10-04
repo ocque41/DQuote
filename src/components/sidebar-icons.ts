@@ -8,6 +8,7 @@ import {
   SettingsIcon,
   ShoppingCartIcon,
   PackageIcon,
+  PresentationIcon,
 } from "lucide-react";
 
 import type { SidebarIconName } from "@/lib/navigation";
@@ -21,6 +22,7 @@ const iconMap: Record<SidebarIconName, LucideIcon> = {
   "shopping-cart": ShoppingCartIcon,
   "settings": SettingsIcon,
   "package": PackageIcon,
+  "presentation": PresentationIcon,
 };
 
 export function getSidebarIcon(name: SidebarIconName): LucideIcon {

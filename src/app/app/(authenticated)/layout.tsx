@@ -9,7 +9,9 @@ import { SidebarMobileToggle } from "@/components/sidebar-mobile-toggle";
 
 const navLinks = [
   { href: "/app", title: "Overview", icon: "layout-dashboard" as const },
-  { href: "/app/proposals", title: "Proposals", icon: "file-text" as const },
+  { href: "/app/items", title: "Items", icon: "package" as const },
+  { href: "/app/quotes", title: "Quotes", icon: "file-text" as const },
+  { href: "/app/proposals", title: "Proposals", icon: "presentation" as const },
   { href: "/admin/analytics", title: "Analytics", icon: "bar-chart-3" as const }
 ];
 

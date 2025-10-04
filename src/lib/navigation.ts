@@ -6,7 +6,8 @@ export type SidebarIconName =
   | "help-circle"
   | "shopping-cart"
   | "settings"
-  | "package";
+  | "package"
+  | "presentation";
 
 export const mainNavigation = [
   { title: "Dashboard", href: "/dashboard", icon: "layout-dashboard" },
