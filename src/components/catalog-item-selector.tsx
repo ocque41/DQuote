@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Package, Check } from "lucide-react";
+import { Search, Package, Check, RefreshCw, ExternalLink, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 
 interface ItemVariant {
   id: string;
@@ -62,7 +65,12 @@ export function CatalogItemSelector({
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/items");
+      const response = await fetch("/api/items", {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
       if (!response.ok) throw new Error("Failed to fetch items");
       const data = await response.json();
       setItems(data.items || []);
@@ -117,6 +125,31 @@ export function CatalogItemSelector({
             />
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Catalog updates instantly reflect here&mdash;refresh if you just added something new.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={fetchItems}
+                disabled={loading}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+              <Button asChild size="sm" variant="link" className="gap-1 px-0">
+                <Link href="/items" className="text-primary">
+                  Manage catalog
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               Loading catalog items...
@@ -130,8 +163,16 @@ export function CatalogItemSelector({
               <p className="max-w-md text-muted-foreground">
                 {searchQuery
                   ? "Try a different search term"
-                  : "Create catalog items first to add them to your quotes"}
+                  : "Create catalog items first to add them to your quotes."}
               </p>
+              {!searchQuery && (
+                <Button asChild size="sm" className="mt-4">
+                  <Link href="/items" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add your first item
+                  </Link>
+                </Button>
+              )}
             </div>
           ) : (
             <ScrollArea className="h-[400px] pr-4">

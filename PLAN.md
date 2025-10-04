@@ -455,3 +455,35 @@
 - [x] Visiting `/dashboard` after signing in renders without the "Functions cannot be passed directly to Client Components" error, and logging out returns visitors to `/login` without a white screen.
 - [x] README authentication runbook documents how to verify the dashboard/sidebar experience locally (including the command(s) to run) so contributors can confirm the fix.
 
+# SPRINT 23 PLAN
+
+## Item 1: Stabilize quote builder catalog experience
+
+- Ensure the quote builder surfaces catalog entries created from the `/items` area without requiring a page refresh and protect the choice slide editor/preview from crashes when options are incomplete.
+- Refresh the flow-map view so slide branching mirrors the builder sequence for a clearer "Zapier-style" mental model.
+
+### Acceptance Criteria
+
+- [ ] Creating a catalog item from `/items`, navigating to "New Quote", and opening the catalog selector displays the freshly created item and allows attaching it to a slide.
+- [ ] Switching between builder, flow map, and preview for a choice slide with partially filled options no longer throws runtime errors; the flow map renders nodes for every slide and branching arrows for any configured next slide.
+
+## Item 2: Structure proposals index for at-a-glance status
+
+- Replace the flat proposal card list with a responsive table that highlights status, value, owner, and last activity while providing an empty state when no records exist.
+- Add lightweight filters or grouping affordances so teams can scan their pipeline by status.
+
+### Acceptance Criteria
+
+- [ ] Visiting `/proposals` as an authenticated user renders a structured table with sortable columns for proposal title, client, value, status, and updated date, plus in-row links to open the share page.
+- [ ] When there are zero proposals, the index shows an explanatory empty state with a CTA to create a quote, without throwing server errors.
+
+## Item 3: Replace dashboard demo data with live metrics
+
+- Swap the hard-coded dashboard JSON for server-calculated metrics derived from the viewer's org (quotes, proposals, acceptance) while handling empty datasets gracefully.
+- Document any manual data requirements in the README so contributors can populate demo records without schema changes.
+
+### Acceptance Criteria
+
+- [ ] `/dashboard` renders cards, charts, and tables driven by Prisma queries for the signed-in org; if no data exists the UI shows empty states instead of example figures.
+- [ ] README gains a runbook section listing manual steps or scripts to seed quotes/proposals locally so the new metrics can be exercised without migrations.
+

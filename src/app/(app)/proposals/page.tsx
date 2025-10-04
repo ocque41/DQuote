@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getViewerContext } from "@/server/auth";
 import { prisma } from "@/server/prisma";
+import { ProposalsTable } from "./proposals-table";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function ProposalsIndexPage() {
   const viewer = await getViewerContext();
@@ -14,55 +15,46 @@ export default async function ProposalsIndexPage() {
 
   const proposals = await prisma.proposal.findMany({
     where: { orgId: viewer.org.id },
-    orderBy: { createdAt: "desc" },
-    take: 10,
+    orderBy: { updatedAt: "desc" },
+    take: 50,
     include: {
       client: true,
-      quote: true
-    }
+      quote: true,
+    },
   });
+
+  const tableData = proposals.map((proposal) => ({
+    id: proposal.id,
+    shareId: proposal.shareId,
+    title: proposal.title,
+    status: proposal.status,
+    updatedAt: proposal.updatedAt.toISOString(),
+    createdAt: proposal.createdAt.toISOString(),
+    expiresAt: proposal.expiresAt?.toISOString() ?? null,
+    client: {
+      name: proposal.client.name,
+      company: proposal.client.company ?? null,
+    },
+    value: proposal.quote ? Number(proposal.quote.total) : null,
+    currency: proposal.quote?.currency ?? "EUR",
+  }));
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Proposals</h1>
-        <p className="text-sm text-muted-foreground">
-          Recent interactive decks ready to send for {viewer.org.name}.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold">Proposals</h1>
+            <p className="text-sm text-muted-foreground">
+              Monitor every share link in flight across {viewer.org.name} and jump into proposals that need attention.
+            </p>
+          </div>
+          <Button asChild size="sm" className="self-start">
+            <Link href="/quotes/new">Create new quote</Link>
+          </Button>
+        </div>
       </header>
-      <div className="grid gap-4">
-        {proposals.map((proposal) => {
-          const quoteTotal = proposal.quote ? Number(proposal.quote.total) : null;
-          const currency = proposal.quote?.currency ?? "EUR";
-          const formatted =
-            quoteTotal !== null
-              ? new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(
-                  quoteTotal
-                )
-              : "—";
-
-          return (
-            <Card key={proposal.id}>
-              <CardHeader>
-                <CardTitle>{proposal.title}</CardTitle>
-                <CardDescription>
-                  {proposal.client.name}
-                  {proposal.client.company ? ` · ${proposal.client.company}` : ""}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between text-sm text-muted-foreground">
-                <span className="capitalize">Status: {proposal.status.toLowerCase()}</span>
-                <div className="flex items-center gap-4">
-                  <span>Total {formatted}</span>
-                  <Link href={`/proposals/${proposal.shareId}`} className="text-primary hover:underline">
-                    Open
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <ProposalsTable proposals={tableData} />
     </div>
   );
 }

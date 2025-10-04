@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Card } from "@/components/ui/card";
+import { Fragment, useMemo } from "react";
+import { ArrowRight, GitBranch, GitCommit, MoveRight } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface SlideOption {
   id: string;
@@ -23,307 +26,143 @@ interface QuoteFlowMapProps {
   slides: QuoteSlide[];
 }
 
-interface SlideNode {
-  id: string;
-  slide: QuoteSlide;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+const typeToLabel: Record<QuoteSlide["type"], { name: string; description: string }> = {
+  intro: { name: "Intro", description: "Kickoff messaging" },
+  choice: { name: "Choice", description: "A/B decision" },
+  addon: { name: "Add-on", description: "Optional extras" },
+  review: { name: "Review", description: "Summary & CTA" },
+};
+
+const typeToTone: Record<QuoteSlide["type"], string> = {
+  intro: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-900",
+  choice: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-900",
+  addon: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-900",
+  review: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-900",
+};
 
 export function QuoteFlowMap({ slides }: QuoteFlowMapProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!canvasRef.current || !containerRef.current || slides.length === 0) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Set canvas size
-    const container = containerRef.current;
-    canvas.width = container.clientWidth;
-    canvas.height = Math.max(600, slides.length * 150);
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Calculate node positions
-    const nodeWidth = 200;
-    const nodeHeight = 80;
-    const horizontalSpacing = 280;
-    const verticalSpacing = 120;
-    const startX = 50;
-    const startY = 50;
-
-    const nodes: SlideNode[] = [];
-    const nodeMap = new Map<string, SlideNode>();
-
-    // Position nodes
-    slides.forEach((slide, index) => {
-      const node: SlideNode = {
-        id: slide.id,
-        slide,
-        x: startX + (index % 3) * horizontalSpacing,
-        y: startY + Math.floor(index / 3) * verticalSpacing,
-        width: nodeWidth,
-        height: nodeHeight,
-      };
-      nodes.push(node);
-      nodeMap.set(slide.id, node);
-    });
-
-    // Draw connections
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 2;
-
-    slides.forEach((slide, index) => {
-      const currentNode = nodeMap.get(slide.id);
-      if (!currentNode) return;
-
-      // Draw default sequential connection
-      if (index < slides.length - 1 && !slide.optionA?.nextSlideId && !slide.optionB?.nextSlideId) {
-        const nextNode = nodes[index + 1];
-        if (nextNode) {
-          drawArrow(
-            ctx,
-            currentNode.x + currentNode.width / 2,
-            currentNode.y + currentNode.height,
-            nextNode.x + nextNode.width / 2,
-            nextNode.y,
-            "#888"
-          );
-        }
-      }
-
-      // Draw conditional connections for Option A
-      if (slide.optionA?.nextSlideId) {
-        const targetNode = nodeMap.get(slide.optionA.nextSlideId);
-        if (targetNode) {
-          drawArrow(
-            ctx,
-            currentNode.x + currentNode.width / 4,
-            currentNode.y + currentNode.height,
-            targetNode.x + targetNode.width / 4,
-            targetNode.y,
-            "#3b82f6" // blue for option A
-          );
-
-          // Label
-          ctx.fillStyle = "#3b82f6";
-          ctx.font = "12px sans-serif";
-          ctx.fillText(
-            "A",
-            currentNode.x + currentNode.width / 4 - 10,
-            currentNode.y + currentNode.height + 15
-          );
-        }
-      }
-
-      // Draw conditional connections for Option B
-      if (slide.optionB?.nextSlideId) {
-        const targetNode = nodeMap.get(slide.optionB.nextSlideId);
-        if (targetNode) {
-          drawArrow(
-            ctx,
-            currentNode.x + (3 * currentNode.width) / 4,
-            currentNode.y + currentNode.height,
-            targetNode.x + (3 * targetNode.width) / 4,
-            targetNode.y,
-            "#8b5cf6" // purple for option B
-          );
-
-          // Label
-          ctx.fillStyle = "#8b5cf6";
-          ctx.font = "12px sans-serif";
-          ctx.fillText(
-            "B",
-            currentNode.x + (3 * currentNode.width) / 4 - 10,
-            currentNode.y + currentNode.height + 15
-          );
-        }
-      }
-    });
-
-    // Draw nodes
-    nodes.forEach((node) => {
-      const { slide, x, y, width, height } = node;
-
-      // Node background
-      ctx.fillStyle = getNodeColor(slide.type);
-      ctx.fillRect(x, y, width, height);
-
-      // Node border
-      ctx.strokeStyle = "#333";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, y, width, height);
-
-      // Slide type badge
-      ctx.fillStyle = "#fff";
-      ctx.font = "10px sans-serif";
-      const badgeText = slide.type.toUpperCase();
-      ctx.fillText(badgeText, x + 8, y + 16);
-
-      // Slide title
-      ctx.fillStyle = "#000";
-      ctx.font = "14px sans-serif";
-      const title = slide.title || `Slide ${slide.position + 1}`;
-      const truncated = title.length > 20 ? title.substring(0, 17) + "..." : title;
-      ctx.fillText(truncated, x + 8, y + 40);
-
-      // Position number
-      ctx.fillStyle = "#666";
-      ctx.font = "12px sans-serif";
-      ctx.fillText(`#${slide.position + 1}`, x + 8, y + 60);
-
-      // Options indicator
-      if (slide.optionA || slide.optionB) {
-        ctx.fillStyle = "#666";
-        ctx.font = "10px sans-serif";
-        const optionsText = slide.optionB ? "A/B Options" : "Option";
-        ctx.fillText(optionsText, x + width - 70, y + 60);
-      }
-    });
-
+  const slideLookup = useMemo(() => {
+    return new Map(slides.map((slide) => [slide.id, slide] as const));
   }, [slides]);
-
-  const drawArrow = (
-    ctx: CanvasRenderingContext2D,
-    fromX: number,
-    fromY: number,
-    toX: number,
-    toY: number,
-    color: string
-  ) => {
-    const headLength = 10;
-    const angle = Math.atan2(toY - fromY, toX - fromX);
-
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
-    ctx.lineWidth = 2;
-
-    // Draw line
-    ctx.beginPath();
-    ctx.moveTo(fromX, fromY);
-    ctx.lineTo(toX, toY);
-    ctx.stroke();
-
-    // Draw arrow head
-    ctx.beginPath();
-    ctx.moveTo(toX, toY);
-    ctx.lineTo(
-      toX - headLength * Math.cos(angle - Math.PI / 6),
-      toY - headLength * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.lineTo(
-      toX - headLength * Math.cos(angle + Math.PI / 6),
-      toY - headLength * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.closePath();
-    ctx.fill();
-  };
-
-  const getNodeColor = (type: string): string => {
-    switch (type) {
-      case "intro":
-        return "#dbeafe"; // blue-100
-      case "choice":
-        return "#fef3c7"; // amber-100
-      case "addon":
-        return "#d1fae5"; // green-100
-      case "review":
-        return "#e9d5ff"; // purple-100
-      default:
-        return "#f3f4f6"; // gray-100
-    }
-  };
 
   if (slides.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>Add slides to see the flow visualization</p>
+      <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border/60 bg-muted/40 p-6 text-center text-muted-foreground">
+        <GitCommit className="h-10 w-10" aria-hidden="true" />
+        <div>
+          <p className="font-medium text-foreground">No slides yet</p>
+          <p className="text-sm">Add slides from the builder to visualize your quote flow.</p>
+        </div>
       </div>
     );
   }
 
+  const summary = {
+    intro: slides.filter((slide) => slide.type === "intro").length,
+    choice: slides.filter((slide) => slide.type === "choice").length,
+    addon: slides.filter((slide) => slide.type === "addon").length,
+    review: slides.filter((slide) => slide.type === "review").length,
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 sm:gap-4 justify-center text-xs sm:text-sm">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-100 border border-gray-300 rounded shrink-0"></div>
-          <span>Intro</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-amber-100 border border-gray-300 rounded shrink-0"></div>
-          <span>Choice</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-100 border border-gray-300 rounded shrink-0"></div>
-          <span>Add-on</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-100 border border-gray-300 rounded shrink-0"></div>
-          <span>Review</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-6 sm:w-8 h-0.5 bg-gray-400 shrink-0"></div>
-          <span>Default</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-6 sm:w-8 h-0.5 bg-blue-500 shrink-0"></div>
-          <span>Option A</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-6 sm:w-8 h-0.5 bg-purple-500 shrink-0"></div>
-          <span>Option B</span>
-        </div>
-      </div>
-
-      {/* Canvas */}
-      <div ref={containerRef} className="w-full overflow-auto border rounded-lg bg-white touch-pan-x touch-pan-y">
-        <canvas ref={canvasRef} className="min-w-full" />
-      </div>
-
-      {/* Slide List */}
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {slides.map((slide) => (
-          <Card key={slide.id} className="p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="text-xs">
-                    {slide.type}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">#{slide.position + 1}</span>
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Object.entries(summary).map(([type, count]) => {
+          const label = type as QuoteSlide["type"];
+          return (
+            <Card key={label} className="border-dashed bg-muted/30">
+              <CardContent className="flex items-center justify-between py-4">
+                <div>
+                  <p className="text-xs font-medium uppercase text-muted-foreground">{typeToLabel[label].name}</p>
+                  <p className="text-lg font-semibold text-foreground">{count}</p>
                 </div>
-                <p className="font-medium text-sm truncate">
-                  {slide.title || `Slide ${slide.position + 1}`}
-                </p>
-                {(slide.optionA || slide.optionB) && (
-                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    {slide.optionA && (
-                      <div className="flex items-center gap-1">
-                        <span className="font-semibold text-blue-600">A:</span>
-                        <span className="truncate">{slide.optionA.name || "Option A"}</span>
-                      </div>
-                    )}
-                    {slide.optionB && (
-                      <div className="flex items-center gap-1">
-                        <span className="font-semibold text-purple-600">B:</span>
-                        <span className="truncate">{slide.optionB.name || "Option B"}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
+                <Badge variant="secondary" className={cn("text-xs border", typeToTone[label])}>
+                  {typeToLabel[label].description}
+                </Badge>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      <ol className="relative space-y-6 border-l border-dashed border-border pl-6">
+        {slides.map((slide, index) => {
+          const defaultNext = slides[index + 1];
+          const optionConnections = [slide.optionA, slide.optionB].filter(Boolean) as SlideOption[];
+
+          return (
+            <li key={slide.id} className="relative">
+              <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-xs font-semibold">
+                {index + 1}
+              </span>
+              <Card className="transition-shadow hover:shadow-sm">
+                <CardContent className="flex flex-col gap-3 py-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className={cn("border", typeToTone[slide.type])}>
+                          {typeToLabel[slide.type].name}
+                        </Badge>
+                        <span className="font-semibold text-foreground">
+                          {slide.title || `Slide ${index + 1}`}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{typeToLabel[slide.type].description}</p>
+                    </div>
+                    <Badge variant="secondary" className="gap-1">
+                      <GitCommit className="h-3 w-3" />
+                      Position {slide.position + 1}
+                    </Badge>
+                  </div>
+
+                  {optionConnections.length > 0 ? (
+                    <div className="space-y-2 rounded-lg border border-dashed border-border/70 bg-muted/40 p-3 text-sm">
+                      <p className="text-xs font-medium uppercase text-muted-foreground">Branching paths</p>
+                      <div className="space-y-2">
+                        {optionConnections.map((option) => {
+                          const target = option.nextSlideId ? slideLookup.get(option.nextSlideId) : defaultNext;
+                          const label = target ? target.title || typeToLabel[target.type].name : "End of flow";
+
+                          return (
+                            <Fragment key={option.id}>
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-sm font-medium text-foreground">{option.name || "Option"}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {option.nextSlideId
+                                      ? `Jumps to ${label}`
+                                      : defaultNext
+                                      ? `Continues to ${label}`
+                                      : "Ends the presentation"}
+                                  </span>
+                                </div>
+                                <Badge variant="outline" className="gap-1 text-xs">
+                                  <GitBranch className="h-3 w-3" />
+                                  {option.nextSlideId ? "Conditional" : "Sequential"}
+                                </Badge>
+                              </div>
+                            </Fragment>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : defaultNext ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-dashed border-border/70 bg-muted/40 p-3 text-xs font-medium text-muted-foreground">
+                      <MoveRight className="h-4 w-4 text-primary" />
+                      Automatically continues to {defaultNext.title || typeToLabel[defaultNext.type].name}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border border-dashed border-border/70 bg-muted/40 p-3 text-xs font-medium text-muted-foreground">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      Final slide in the flow
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

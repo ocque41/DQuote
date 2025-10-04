@@ -38,6 +38,17 @@ pnpm build
 > Make sure `DATABASE_URL` (and `DIRECT_URL` when required) point at the database
 > you intend to migrate before running the command locally or in CI.
 
+## Populate data for dashboard metrics
+
+The dashboard aggregates live proposal data instead of static JSON fixtures. To exercise the widgets locally:
+
+1. Sign in and create a few catalog items from **Items → Add Item** so they appear in the quote builder selector (use the refresh button if you add variants after opening the dialog).
+2. Create quotes from **Quotes → New Quote**, attach catalog items to choice/add-on slides, and save so matching proposals are generated.
+3. Change proposal statuses by sending share links to yourself or by updating records through the Prisma Studio UI (`pnpm studio`) if you need accepted/declined samples.
+4. Revisit `/dashboard` to confirm cards, charts, and tables reflect the new activity; use `/proposals` to verify pipeline filters.
+
+> Need to regenerate everything from a blank database? Run `pnpm migrate:apply` followed by `pnpm studio` to inspect tables, then repeat the steps above—no code changes required.
+
 Visit `http://localhost:3000/` for the marketing site, `/dashboard` for the internal dashboard, and `/proposals/dq-demo-aurora` for the seeded interactive experience.
 
 An admin analytics view is available at `/admin/analytics`, summarising slide completion and dwell time for the seeded proposal. Set `DEMO_PROPOSAL_SHARE_ID` if you seed additional demos and want to pivot the dashboard.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Plus, Trash2, FileText, Play, Grid3x3, ArrowRight, Package } from "lucide-react";
 
@@ -97,6 +97,17 @@ export function NewQuoteBuilder() {
   const [catalogSelectorOpen, setCatalogSelectorOpen] = useState(false);
   const [selectingForSlideId, setSelectingForSlideId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (formData.slides.length === 0) {
+      setCurrentSlideIndex(0);
+      return;
+    }
+
+    if (currentSlideIndex > formData.slides.length - 1) {
+      setCurrentSlideIndex(formData.slides.length - 1);
+    }
+  }, [formData.slides.length, currentSlideIndex]);
+
   const addSlide = (type: QuoteSlide["type"]) => {
     const newSlide: QuoteSlide = {
       id: crypto.randomUUID(),
@@ -191,6 +202,8 @@ export function NewQuoteBuilder() {
     const variants = item.variants || [];
     const variantA = variants[0];
     const variantB = variants[1];
+    const basePrice = Number(item.unitPrice);
+    const baseDescription = item.description || "";
 
     const updates: Partial<QuoteSlide> = {
       catalogItemId: item.id,
@@ -199,26 +212,45 @@ export function NewQuoteBuilder() {
     };
 
     if (slide.type === "choice" || slide.type === "addon") {
-      if (variantA) {
-        updates.optionA = {
-          id: crypto.randomUUID(),
-          name: variantA.name,
-          description: variantA.description || item.description || "",
-          price: variantA.priceOverride ? Number(variantA.priceOverride) : Number(item.unitPrice),
-          imageUrl: variantA.imageUrl || undefined,
-          catalogItemId: item.id,
-        };
-      }
+      const optionA = variantA
+        ? {
+            id: crypto.randomUUID(),
+            name: variantA.name,
+            description: variantA.description || baseDescription,
+            price: variantA.priceOverride ? Number(variantA.priceOverride) : basePrice,
+            imageUrl: variantA.imageUrl || undefined,
+            catalogItemId: item.id,
+          }
+        : {
+            id: slide.optionA?.id ?? crypto.randomUUID(),
+            name: slide.optionA?.name || item.name,
+            description: slide.optionA?.description || baseDescription,
+            price: slide.optionA?.price ?? basePrice,
+            catalogItemId: item.id,
+          };
 
-      if (slide.type === "choice" && variantB) {
-        updates.optionB = {
-          id: crypto.randomUUID(),
-          name: variantB.name,
-          description: variantB.description || item.description || "",
-          price: variantB.priceOverride ? Number(variantB.priceOverride) : Number(item.unitPrice),
-          imageUrl: variantB.imageUrl || undefined,
-          catalogItemId: item.id,
-        };
+      updates.optionA = optionA;
+
+      if (slide.type === "choice") {
+        if (variantB) {
+          updates.optionB = {
+            id: crypto.randomUUID(),
+            name: variantB.name,
+            description: variantB.description || baseDescription,
+            price: variantB.priceOverride ? Number(variantB.priceOverride) : basePrice,
+            imageUrl: variantB.imageUrl || undefined,
+            catalogItemId: item.id,
+          };
+        } else if (slide.optionB) {
+          updates.optionB = {
+            ...slide.optionB,
+            catalogItemId: item.id,
+            description: slide.optionB.description || baseDescription,
+            price: Number.isFinite(slide.optionB.price) ? slide.optionB.price : basePrice,
+          };
+        } else {
+          updates.optionB = undefined;
+        }
       }
     }
 
@@ -269,17 +301,42 @@ export function NewQuoteBuilder() {
     }
   };
 
+  const goToNextSlide = () => {
+    setCurrentSlideIndex(prev => {
+      if (formData.slides.length === 0) return 0;
+      return Math.min(prev + 1, formData.slides.length - 1);
+    });
+  };
+
+  const goToPreviousSlide = () => {
+    setCurrentSlideIndex(prev => Math.max(0, prev - 1));
+  };
+
   const handlePreview = () => {
     setActiveView("preview");
     setCurrentSlideIndex(0);
   };
 
   const formatCurrency = (amount: number) => {
+    if (!Number.isFinite(amount)) {
+      return "—";
+    }
+
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: formData.currency,
     }).format(amount);
   };
+
+  const totalSlidesByType = useMemo(() => {
+    return formData.slides.reduce(
+      (acc, slide) => {
+        acc[slide.type] = (acc[slide.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<QuoteSlide["type"], number>
+    );
+  }, [formData.slides]);
 
   const renderPreviewSlide = (slide: QuoteSlide) => {
     switch (slide.type) {
@@ -293,7 +350,7 @@ export function NewQuoteBuilder() {
               )}
             </CardHeader>
             <CardContent className="text-center px-4 sm:px-6">
-              <Button size="lg" onClick={() => setCurrentSlideIndex(currentSlideIndex + 1)} className="w-full sm:w-auto">
+              <Button size="lg" onClick={goToNextSlide} className="w-full sm:w-auto">
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </CardContent>
@@ -318,7 +375,7 @@ export function NewQuoteBuilder() {
                   <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                     <p className="text-sm sm:text-base text-muted-foreground">{slide.optionA.description}</p>
                     <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(slide.optionA.price)}</div>
-                    <Button className="w-full" size="lg">
+                    <Button className="w-full" size="lg" onClick={goToNextSlide}>
                       Select This Option
                     </Button>
                   </CardContent>
@@ -332,7 +389,7 @@ export function NewQuoteBuilder() {
                   <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                     <p className="text-sm sm:text-base text-muted-foreground">{slide.optionB.description}</p>
                     <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(slide.optionB.price)}</div>
-                    <Button className="w-full" size="lg">
+                    <Button className="w-full" size="lg" onClick={goToNextSlide}>
                       Select This Option
                     </Button>
                   </CardContent>
@@ -367,11 +424,7 @@ export function NewQuoteBuilder() {
                 </CardContent>
               </Card>
             )}
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={() => setCurrentSlideIndex(currentSlideIndex + 1)}
-            >
+            <Button className="w-full" size="lg" onClick={goToNextSlide}>
               Continue <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
@@ -787,18 +840,14 @@ export function NewQuoteBuilder() {
                         <span className="text-muted-foreground">Total Slides:</span>
                         <span className="font-medium">{formData.slides.length}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Choice Slides:</span>
-                        <span className="font-medium">
-                          {formData.slides.filter(s => s.type === "choice").length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Add-on Slides:</span>
-                        <span className="font-medium">
-                          {formData.slides.filter(s => s.type === "addon").length}
-                        </span>
-                      </div>
+                      {(["intro", "choice", "addon", "review"] as QuoteSlide["type"][]).map(type => (
+                        <div key={type} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground capitalize">{type}</span>
+                          <span className="font-medium text-foreground">
+                            {totalSlidesByType[type] ?? 0}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                     <Separator />
                     <div className="space-y-2 text-sm text-muted-foreground">
@@ -885,7 +934,7 @@ export function NewQuoteBuilder() {
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Button
                 variant="outline"
-                onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
+                onClick={goToPreviousSlide}
                 disabled={currentSlideIndex === 0}
                 className="w-full sm:w-auto"
               >
@@ -897,9 +946,7 @@ export function NewQuoteBuilder() {
               </span>
               <Button
                 variant="outline"
-                onClick={() =>
-                  setCurrentSlideIndex(Math.min(formData.slides.length - 1, currentSlideIndex + 1))
-                }
+                onClick={goToNextSlide}
                 disabled={currentSlideIndex === formData.slides.length - 1}
                 className="w-full sm:w-auto"
               >
