@@ -9,6 +9,7 @@ export type PortfolioAsset = {
 export type RuntimeOption = {
   id: string;
   kind: "ITEM" | "BUNDLE";
+  name?: string | null;
   description?: string | null;
   priceOverride?: number | null;
   isDefault: boolean;
@@ -16,6 +17,7 @@ export type RuntimeOption = {
   minQty?: number | null;
   maxQty?: number | null;
   defaultQty?: number | null;
+  nextSlideId?: string | null;
   catalogItem?: {
     id: string;
     name: string;

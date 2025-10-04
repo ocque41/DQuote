@@ -164,17 +164,19 @@ model ProposalTemplate {
 }
 
 model Slide {
-  id         String            @id @default(uuid())
-  templateId String?
-  template   ProposalTemplate? @relation(fields: [templateId], references: [id])
-  proposalId String?
-  proposal   Proposal?         @relation(fields: [proposalId], references: [id])
-  type       SlideType
-  title      String?
-  subtitle   String?
-  position   Int
-  meta       Json?
-  options    Option[]
+  id              String            @id @default(uuid())
+  templateId      String?
+  template        ProposalTemplate? @relation(fields: [templateId], references: [id])
+  proposalId      String?
+  proposal        Proposal?         @relation(fields: [proposalId], references: [id])
+  type            SlideType
+  title           String?
+  subtitle        String?
+  position        Int
+  meta            Json?
+  catalogItemId   String?           // Link to source catalog item
+  catalogItemName String?           // Display name for rebuild/context
+  options         Option[]
 
   @@schema("public")
 }
@@ -186,6 +188,7 @@ model Option {
   catalogItemId String?
   catalogItem   CatalogItem? @relation(fields: [catalogItemId], references: [id])
   kind          OptionKind
+  name          String?      // Variant name: "Gold Package", "Platinum Package"
   description   String?
   priceOverride Decimal?     @db.Decimal(12, 2)
   currency      String? // default to item currency if null
@@ -194,6 +197,7 @@ model Option {
   minQty        Int? // null => 0
   maxQty        Int?
   defaultQty    Int? // null => 1
+  nextSlideId   String?      // Conditional branching: which slide to show next
   selections    Selection[]
 
   @@schema("public")

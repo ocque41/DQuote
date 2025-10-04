@@ -113,6 +113,8 @@ export async function POST(req: Request) {
               title: slide.title,
               subtitle: slide.subtitle,
               position: slide.position,
+              catalogItemId: slide.catalogItemId,
+              catalogItemName: slide.catalogItemName,
               options: {
                 create: [],
               },
@@ -124,11 +126,13 @@ export async function POST(req: Request) {
             if (slide.optionA) {
               const optionAData: Prisma.OptionCreateWithoutSlideInput = {
                 kind: "ITEM",
+                name: slide.optionA.name,
                 description: slide.optionA.description,
                 priceOverride: new Prisma.Decimal(slide.optionA.price),
                 currency: quoteData.currency,
                 isDefault: false,
                 isAddOn: slide.type === "addon",
+                nextSlideId: slide.optionA.nextSlideId,
               };
 
               if (slide.optionA.catalogItemId) {
@@ -143,11 +147,13 @@ export async function POST(req: Request) {
             if (slide.optionB && slide.type === "choice") {
               const optionBData: Prisma.OptionCreateWithoutSlideInput = {
                 kind: "ITEM",
+                name: slide.optionB.name,
                 description: slide.optionB.description,
                 priceOverride: new Prisma.Decimal(slide.optionB.price),
                 currency: quoteData.currency,
                 isDefault: false,
                 isAddOn: false,
+                nextSlideId: slide.optionB.nextSlideId,
               };
 
               if (slide.optionB.catalogItemId) {

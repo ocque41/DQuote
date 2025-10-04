@@ -44,7 +44,7 @@ export function OptionCard({
   const tags = option.catalogItem?.tags ?? [];
   const minQty = option.minQty ?? 0;
   const maxQty = option.maxQty ?? 5;
-  const displayName = option.catalogItem?.name ?? option.description ?? "Custom option";
+  const displayName = option.name ?? option.catalogItem?.name ?? option.description ?? "Custom option";
   const description = option.catalogItem?.description ?? option.description;
   const cardStyle = isSelected && theme ? { borderColor: theme.brandColor, backgroundColor: theme.brandSurface } : undefined;
 

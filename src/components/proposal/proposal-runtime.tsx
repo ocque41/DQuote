@@ -376,6 +376,14 @@ export function ProposalRuntime(props: ProposalRuntimeProps) {
     for (const event of eventsToLog) {
       emitSelectionEvent(event.type, event.option, event.qty);
     }
+
+    // Conditional navigation: if option has nextSlideId, navigate to that slide
+    if (option.nextSlideId) {
+      const targetIndex = slides.findIndex(s => s.id === option.nextSlideId);
+      if (targetIndex >= 0) {
+        setActiveIndex(targetIndex);
+      }
+    }
   };
 
   const toggleAddon = (option: RuntimeOption) => {
