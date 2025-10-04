@@ -226,10 +226,47 @@ export function NewQuoteBuilder() {
     setSelectingForSlideId(null);
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
-    // TODO: Implement save functionality
-    console.log("Saving quote:", formData);
-    router.push("/quotes");
+    // Validation
+    if (!formData.title) {
+      alert("Please enter a quote title");
+      return;
+    }
+    if (!formData.clientName) {
+      alert("Please enter a client name");
+      return;
+    }
+    if (formData.slides.length === 0) {
+      alert("Please add at least one slide");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save quote");
+      }
+
+      const result = await response.json();
+
+      // Redirect to quotes list or to the proposal view
+      router.push(`/app/quotes?success=created&shareId=${result.proposal.shareId}`);
+    } catch (error) {
+      console.error("Error saving quote:", error);
+      alert(error instanceof Error ? error.message : "Failed to save quote");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePreview = () => {
@@ -403,9 +440,9 @@ export function NewQuoteBuilder() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button onClick={handleSave} className="gap-2" size="sm">
+            <Button onClick={handleSave} className="gap-2" size="sm" disabled={isSaving}>
               <Save className="h-4 w-4" />
-              <span className="hidden md:inline">Save Quote</span>
+              <span className="hidden md:inline">{isSaving ? "Saving..." : "Save Quote"}</span>
             </Button>
           </div>
         </div>
