@@ -1,36 +1,27 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from "lucide-react";
+import { ExternalLinkIcon, MoreHorizontalIcon, CopyIcon } from "lucide-react";
 
 import type { Quote } from "@/app/(app)/quotes/schema";
-import { QuoteActions } from "@/components/quote-actions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
-function formatChange(changePct: number) {
-  if (changePct > 0) {
-    return `+${changePct.toFixed(2)}%`;
-  }
-
-  if (changePct < 0) {
-    return `${changePct.toFixed(2)}%`;
-  }
-
-  return "0.00%";
-}
-
-export type QuoteColumnMeta = {
-  onPinToggle?: (quoteId: string) => void;
-  onRemove?: (quoteId: string) => void;
+const statusColorMap: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  DRAFT: "secondary",
+  SENT: "default",
+  ACCEPTED: "default",
+  EXPIRED: "destructive",
 };
 
 export const columns: ColumnDef<Quote, unknown>[] = [
@@ -53,7 +44,7 @@ export const columns: ColumnDef<Quote, unknown>[] = [
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={`Select quote ${row.original.symbol}`}
+          aria-label={`Select quote ${row.original.title}`}
         />
       </div>
     ),
@@ -61,142 +52,108 @@ export const columns: ColumnDef<Quote, unknown>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "symbol",
+    accessorKey: "title",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Symbol" />
+      <DataTableColumnHeader column={column} title="Quote Title" />
     ),
     cell: ({ row }) => (
-      <Badge variant="outline" className="font-semibold uppercase">
-        {row.original.symbol}
-      </Badge>
-    ),
-    sortingFn: "text",
-  },
-  {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
-    ),
-    cell: ({ row }) => (
-      <div>
-        <p className="text-foreground font-medium">{row.original.name}</p>
-        <p className="text-muted-foreground text-xs">
-          {currencyFormatter.format(row.original.last)} last
+      <div className="max-w-[300px]">
+        <p className="font-medium truncate">{row.original.title}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {row.original.clientName}
         </p>
       </div>
     ),
   },
   {
-    accessorKey: "bid",
+    accessorKey: "status",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Bid" align="right" />
+      <DataTableColumnHeader column={column} title="Status" />
     ),
     cell: ({ row }) => (
-      <div className="text-right tabular-nums">
-        {currencyFormatter.format(row.original.bid)}
-      </div>
-    ),
-    enableHiding: false,
-  },
-  {
-    accessorKey: "ask",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Ask" align="right" />
-    ),
-    cell: ({ row }) => (
-      <div className="text-right tabular-nums">
-        {currencyFormatter.format(row.original.ask)}
-      </div>
+      <Badge variant={statusColorMap[row.original.status] || "outline"}>
+        {row.original.status}
+      </Badge>
     ),
   },
   {
-    accessorKey: "last",
+    accessorKey: "createdAt",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Last" align="right" />
+      <DataTableColumnHeader column={column} title="Created" />
     ),
     cell: ({ row }) => (
-      <div className="text-right tabular-nums">
-        {currencyFormatter.format(row.original.last)}
-      </div>
+      <time
+        dateTime={row.original.createdAt.toISOString()}
+        className="text-sm text-muted-foreground"
+      >
+        {row.original.createdAt.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </time>
     ),
+    sortingFn: (rowA, rowB) =>
+      rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
   },
   {
-    accessorKey: "changePct",
+    accessorKey: "shareId",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Change" align="right" />
+      <DataTableColumnHeader column={column} title="Share Link" />
     ),
     cell: ({ row }) => {
-      const value = row.original.changePct;
-      const Icon =
-        value > 0 ? ArrowUpIcon : value < 0 ? ArrowDownIcon : MinusIcon;
+      const shareUrl = `${window.location.origin}/proposals/${row.original.shareId}`;
       return (
-        <div
-          className={cn(
-            "flex items-center justify-end gap-1 tabular-nums",
-            value > 0 && "text-emerald-600 dark:text-emerald-400",
-            value < 0 && "text-red-500 dark:text-red-400",
-          )}
-        >
-          <Icon className="size-3" />
-          {formatChange(value)}
+        <div className="flex items-center gap-2">
+          <code className="text-xs bg-muted px-2 py-1 rounded">
+            {row.original.shareId.slice(0, 8)}...
+          </code>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => {
+              navigator.clipboard.writeText(shareUrl);
+            }}
+            title="Copy share link"
+          >
+            <CopyIcon className="h-3 w-3" />
+          </Button>
         </div>
       );
     },
-    filterFn: (row, id, value) => {
-      if (value === "gainers") {
-        return row.original.changePct > 0;
-      }
-      if (value === "losers") {
-        return row.original.changePct < 0;
-      }
-      return true;
-    },
-  },
-  {
-    accessorKey: "updatedAt",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Updated" />
-    ),
-    cell: ({ row }) => {
-      return (
-        <time
-          dateTime={row.original.updatedAt.toISOString()}
-          className="text-muted-foreground text-sm"
-        >
-          {row.original.updatedAt.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </time>
-      );
-    },
-    sortingFn: (rowA, rowB) =>
-      new Date(rowA.original.updatedAt).getTime() -
-      new Date(rowB.original.updatedAt).getTime(),
-  },
-  {
-    accessorKey: "pinned",
-    header: () => null,
-    cell: () => null,
-    filterFn: (row, id, value) => {
-      if (value === true) {
-        return row.original.pinned;
-      }
-      return true;
-    },
-    enableSorting: false,
-    enableHiding: true,
   },
   {
     id: "actions",
-    cell: ({ row, table }) => {
-      const meta = table.options.meta as QuoteColumnMeta | undefined;
+    cell: ({ row }) => {
+      const shareUrl = `/proposals/${row.original.shareId}`;
       return (
-        <QuoteActions
-          quote={row.original}
-          onPinToggle={meta?.onPinToggle}
-          onRemove={meta?.onRemove}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreHorizontalIcon className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={shareUrl} target="_blank">
+                <ExternalLinkIcon className="mr-2 h-4 w-4" />
+                View Proposal
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}${shareUrl}`
+                );
+              }}
+            >
+              <CopyIcon className="mr-2 h-4 w-4" />
+              Copy Link
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },
