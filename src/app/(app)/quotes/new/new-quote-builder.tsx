@@ -26,6 +26,24 @@ import {
 import { QuoteFlowMap } from "@/components/quote-flow-map";
 import { CatalogItemSelector } from "@/components/catalog-item-selector";
 
+interface ItemVariant {
+  id: string;
+  name: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  priceOverride?: number | null;
+  position: number;
+}
+
+interface CatalogItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  unitPrice: number;
+  currency: string;
+  variants?: ItemVariant[];
+}
+
 interface SlideOption {
   id: string;
   name: string;
@@ -163,7 +181,7 @@ export function NewQuoteBuilder() {
     setCatalogSelectorOpen(true);
   };
 
-  const handleCatalogItemSelected = (item: any) => {
+  const handleCatalogItemSelected = (item: CatalogItem) => {
     if (!selectingForSlideId) return;
 
     const slide = formData.slides.find(s => s.id === selectingForSlideId);

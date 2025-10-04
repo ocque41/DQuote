@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Search, Package, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 interface ItemVariant {
   id: string;
@@ -151,13 +151,15 @@ export function CatalogItemSelector({
                           {item.variants?.slice(0, 2).map((variant, idx) => (
                             <div
                               key={variant.id}
-                              className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center"
+                              className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center relative"
                             >
                               {variant.imageUrl ? (
-                                <img
+                                <Image
                                   src={variant.imageUrl}
                                   alt={variant.name}
-                                  className="w-full h-full object-cover"
+                                  fill
+                                  className="object-cover"
+                                  sizes="64px"
                                 />
                               ) : (
                                 <span className="text-xs text-muted-foreground">
