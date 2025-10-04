@@ -105,7 +105,7 @@ export async function POST(req: Request) {
         shareId,
         status: "DRAFT",
         expiresAt: quoteData.expiresAt ? new Date(quoteData.expiresAt) : null,
-        createdBy: authResult.viewer.user.id,
+        createdBy: authResult.viewer.orgUser.id,
         slides: {
           create: slides.map((slide) => {
             const slideData: Prisma.SlideCreateWithoutProposalInput = {
@@ -122,27 +122,41 @@ export async function POST(req: Request) {
             const options: Prisma.OptionCreateWithoutSlideInput[] = [];
 
             if (slide.optionA) {
-              options.push({
+              const optionAData: Prisma.OptionCreateWithoutSlideInput = {
                 kind: "ITEM",
                 description: slide.optionA.description,
                 priceOverride: new Prisma.Decimal(slide.optionA.price),
                 currency: quoteData.currency,
                 isDefault: false,
                 isAddOn: slide.type === "addon",
-                catalogItemId: slide.optionA.catalogItemId,
-              });
+              };
+
+              if (slide.optionA.catalogItemId) {
+                optionAData.catalogItem = {
+                  connect: { id: slide.optionA.catalogItemId },
+                };
+              }
+
+              options.push(optionAData);
             }
 
             if (slide.optionB && slide.type === "choice") {
-              options.push({
+              const optionBData: Prisma.OptionCreateWithoutSlideInput = {
                 kind: "ITEM",
                 description: slide.optionB.description,
                 priceOverride: new Prisma.Decimal(slide.optionB.price),
                 currency: quoteData.currency,
                 isDefault: false,
                 isAddOn: false,
-                catalogItemId: slide.optionB.catalogItemId,
-              });
+              };
+
+              if (slide.optionB.catalogItemId) {
+                optionBData.catalogItem = {
+                  connect: { id: slide.optionB.catalogItemId },
+                };
+              }
+
+              options.push(optionBData);
             }
 
             if (options.length > 0) {
