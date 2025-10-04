@@ -215,7 +215,9 @@ pnpm dev
 
 ### Test Coverage
 - **Pricing Engine**: Comprehensive unit tests in `rules.test.ts` (run via `pnpm test:pricing`)
-- **E2E Tests**: Playwright tests for layout/sidebar (`pnpm exec playwright test tests/ui/layout.spec.ts`)
+- **E2E Tests**: Playwright tests for layout/sidebar
+  - Run all tests: `pnpm exec playwright test`
+  - Run specific test: `pnpm exec playwright test tests/ui/layout.spec.ts`
 - **Development**: Manual testing via `/proposals/dq-demo-aurora`
 - **Stripe**: Use test keys and Stripe CLI for webhook testing
 

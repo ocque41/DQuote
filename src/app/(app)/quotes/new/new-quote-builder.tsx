@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Plus, Trash2, FileText, Play, Grid3x3, ArrowRight } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, FileText, Play, Grid3x3, ArrowRight, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { QuoteFlowMap } from "@/components/quote-flow-map";
+import { CatalogItemSelector } from "@/components/catalog-item-selector";
 
 interface SlideOption {
   id: string;
@@ -32,6 +33,7 @@ interface SlideOption {
   price: number;
   imageUrl?: string;
   nextSlideId?: string; // Conditional path
+  catalogItemId?: string; // Link to catalog item
 }
 
 interface QuoteSlide {
@@ -40,6 +42,8 @@ interface QuoteSlide {
   subtitle?: string;
   type: "intro" | "choice" | "addon" | "review";
   position: number;
+  catalogItemId?: string; // Link to catalog item
+  catalogItemName?: string; // Display name
   optionA?: SlideOption;
   optionB?: SlideOption;
   allowMultiple?: boolean; // For addon slides
@@ -72,6 +76,8 @@ export function NewQuoteBuilder() {
   const [activeView, setActiveView] = useState<"builder" | "flow" | "preview">("builder");
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
+  const [catalogSelectorOpen, setCatalogSelectorOpen] = useState(false);
+  const [selectingForSlideId, setSelectingForSlideId] = useState<string | null>(null);
 
   const addSlide = (type: QuoteSlide["type"]) => {
     const newSlide: QuoteSlide = {
@@ -150,6 +156,56 @@ export function NewQuoteBuilder() {
 
       return { ...prev, slides };
     });
+  };
+
+  const handleSelectCatalogItem = (slideId: string) => {
+    setSelectingForSlideId(slideId);
+    setCatalogSelectorOpen(true);
+  };
+
+  const handleCatalogItemSelected = (item: any) => {
+    if (!selectingForSlideId) return;
+
+    const slide = formData.slides.find(s => s.id === selectingForSlideId);
+    if (!slide) return;
+
+    // Auto-populate options from catalog item variants
+    const variants = item.variants || [];
+    const variantA = variants[0];
+    const variantB = variants[1];
+
+    const updates: Partial<QuoteSlide> = {
+      catalogItemId: item.id,
+      catalogItemName: item.name,
+      title: slide.title || item.name,
+    };
+
+    if (slide.type === "choice" || slide.type === "addon") {
+      if (variantA) {
+        updates.optionA = {
+          id: crypto.randomUUID(),
+          name: variantA.name,
+          description: variantA.description || item.description || "",
+          price: variantA.priceOverride ? Number(variantA.priceOverride) : Number(item.unitPrice),
+          imageUrl: variantA.imageUrl || undefined,
+          catalogItemId: item.id,
+        };
+      }
+
+      if (slide.type === "choice" && variantB) {
+        updates.optionB = {
+          id: crypto.randomUUID(),
+          name: variantB.name,
+          description: variantB.description || item.description || "",
+          price: variantB.priceOverride ? Number(variantB.priceOverride) : Number(item.unitPrice),
+          imageUrl: variantB.imageUrl || undefined,
+          catalogItemId: item.id,
+        };
+      }
+    }
+
+    updateSlide(selectingForSlideId, updates);
+    setSelectingForSlideId(null);
   };
 
   const handleSave = async () => {
@@ -493,6 +549,35 @@ export function NewQuoteBuilder() {
                                 />
                               </div>
 
+                              {/* Catalog Item Selector for Choice & Addon slides */}
+                              {(slide.type === "choice" || slide.type === "addon") && (
+                                <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-medium">Product / Service</Label>
+                                    {slide.catalogItemId && (
+                                      <Badge variant="secondary" className="gap-1">
+                                        <Package className="h-3 w-3" />
+                                        {slide.catalogItemName}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => handleSelectCatalogItem(slide.id)}
+                                  >
+                                    <Package className="mr-2 h-4 w-4" />
+                                    {slide.catalogItemId ? "Change Catalog Item" : "Select from Catalog"}
+                                  </Button>
+                                  {slide.catalogItemId && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Options below are auto-populated from catalog item variants. You can still edit them manually.
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
                               {/* Option A */}
                               {slide.optionA && (
                                 <div className="border rounded-lg p-4 space-y-3">
@@ -770,6 +855,18 @@ export function NewQuoteBuilder() {
           </div>
         </div>
       )}
+
+      {/* Catalog Item Selector Dialog */}
+      <CatalogItemSelector
+        open={catalogSelectorOpen}
+        onOpenChange={setCatalogSelectorOpen}
+        onSelectItem={handleCatalogItemSelected}
+        selectedItemId={
+          selectingForSlideId
+            ? formData.slides.find(s => s.id === selectingForSlideId)?.catalogItemId
+            : undefined
+        }
+      />
     </div>
   );
 }
