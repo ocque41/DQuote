@@ -95,6 +95,8 @@ function createOption(overrides: Partial<SlideOption> = {}): SlideOption {
   };
 }
 
+const DEFAULT_NEXT_SLIDE = "__default_next__";
+
 function createSlide(type: QuoteSlideType, position: number): QuoteSlide {
   return {
     id: generateId(),
@@ -727,10 +729,11 @@ export function NewQuoteBuilder() {
                                       <div className="space-y-2">
                                         <Label>Next Slide (conditional)</Label>
                                         <Select
-                                          value={option.nextSlideId || ""}
+                                          value={option.nextSlideId ?? DEFAULT_NEXT_SLIDE}
                                           onValueChange={(value) =>
                                             updateOption(slide.id, option.id, {
-                                              nextSlideId: value || undefined,
+                                              nextSlideId:
+                                                value === DEFAULT_NEXT_SLIDE ? undefined : value,
                                             })
                                           }
                                         >
@@ -738,7 +741,7 @@ export function NewQuoteBuilder() {
                                             <SelectValue placeholder="Continue in order" />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            <SelectItem value="">Next slide in order</SelectItem>
+                                            <SelectItem value={DEFAULT_NEXT_SLIDE}>Next slide in order</SelectItem>
                                             {formData.slides
                                               .filter(s => s.id !== slide.id)
                                               .map(s => (
