@@ -78,6 +78,13 @@ interface QuoteFormData {
   expiresAt: string;
 }
 
+function generateId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function NewQuoteBuilder() {
   const router = useRouter();
   const [formData, setFormData] = useState<QuoteFormData>({
@@ -110,19 +117,19 @@ export function NewQuoteBuilder() {
 
   const addSlide = (type: QuoteSlide["type"]) => {
     const newSlide: QuoteSlide = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: "",
       subtitle: "",
       type,
       position: formData.slides.length,
       optionA: type === "choice" || type === "addon" ? {
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: "",
         description: "",
         price: 0,
       } : undefined,
       optionB: type === "choice" ? {
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: "",
         description: "",
         price: 0,
@@ -214,7 +221,7 @@ export function NewQuoteBuilder() {
     if (slide.type === "choice" || slide.type === "addon") {
       const optionA = variantA
         ? {
-            id: crypto.randomUUID(),
+            id: generateId(),
             name: variantA.name,
             description: variantA.description || baseDescription,
             price: variantA.priceOverride ? Number(variantA.priceOverride) : basePrice,
@@ -222,7 +229,7 @@ export function NewQuoteBuilder() {
             catalogItemId: item.id,
           }
         : {
-            id: slide.optionA?.id ?? crypto.randomUUID(),
+            id: slide.optionA?.id ?? generateId(),
             name: slide.optionA?.name || item.name,
             description: slide.optionA?.description || baseDescription,
             price: slide.optionA?.price ?? basePrice,
@@ -234,7 +241,7 @@ export function NewQuoteBuilder() {
       if (slide.type === "choice") {
         if (variantB) {
           updates.optionB = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             name: variantB.name,
             description: variantB.description || baseDescription,
             price: variantB.priceOverride ? Number(variantB.priceOverride) : basePrice,
