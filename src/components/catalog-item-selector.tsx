@@ -17,7 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import type { CatalogItem } from "@/types/catalog";
+import type { CatalogItem, CatalogVariant } from "@/types/catalog";
 
 interface CatalogItemSelectorProps {
   open: boolean;
@@ -32,91 +32,92 @@ function normalizeCatalogItems(items: readonly CatalogItem[] | unknown[]): Catal
     return [];
   }
 
-  return items
-    .map((raw) => {
-      if (!raw || typeof raw !== "object") {
-        return null;
+  const normalized: CatalogItem[] = [];
+
+  for (const raw of items) {
+    if (!raw || typeof raw !== "object") {
+      continue;
+    }
+
+    const item = raw as Record<string, unknown>;
+    const id = item.id;
+    const name = item.name;
+
+    if (typeof id !== "string" || typeof name !== "string") {
+      continue;
+    }
+
+    const variants: CatalogVariant[] = [];
+    if (Array.isArray(item.variants)) {
+      for (const variantRaw of item.variants) {
+        if (!variantRaw || typeof variantRaw !== "object") {
+          continue;
+        }
+
+        const record = variantRaw as Record<string, unknown>;
+        const variantId = record.id;
+        const variantName = record.name;
+
+        if (typeof variantId !== "string" || typeof variantName !== "string") {
+          continue;
+        }
+
+        const priceOverrideRaw = record.priceOverride;
+        const parsedPriceOverride =
+          priceOverrideRaw === null || priceOverrideRaw === undefined
+            ? null
+            : Number(priceOverrideRaw);
+
+        variants.push({
+          id: variantId,
+          name: variantName,
+          description:
+            typeof record.description === "string" ? record.description : null,
+          imageUrl: typeof record.imageUrl === "string" ? record.imageUrl : null,
+          priceOverride:
+            parsedPriceOverride !== null && Number.isFinite(parsedPriceOverride)
+              ? parsedPriceOverride
+              : null,
+          position:
+            typeof record.position === "number"
+              ? record.position
+              : Number(record.position ?? 0) || 0,
+        });
       }
+    }
 
-      const item = raw as Record<string, unknown>;
-      const id = item.id;
-      const name = item.name;
+    const unitPriceRaw = item.unitPrice;
+    const parsedUnitPrice =
+      typeof unitPriceRaw === "number"
+        ? unitPriceRaw
+        : unitPriceRaw !== undefined && unitPriceRaw !== null
+        ? Number(unitPriceRaw)
+        : 0;
 
-      if (typeof id !== "string" || typeof name !== "string") {
-        return null;
-      }
+    normalized.push({
+      id,
+      name,
+      description: typeof item.description === "string" ? item.description : null,
+      code: typeof item.code === "string" ? item.code : undefined,
+      unit: typeof item.unit === "string" ? item.unit : undefined,
+      unitPrice: Number.isFinite(parsedUnitPrice) ? parsedUnitPrice : 0,
+      currency: typeof item.currency === "string" ? item.currency : "EUR",
+      active:
+        typeof item.active === "boolean"
+          ? item.active
+          : item.active === null || item.active === undefined
+          ? true
+          : Boolean(item.active),
+      tags: Array.isArray(item.tags)
+        ? (item.tags as unknown[])
+            .map((tag) => (typeof tag === "string" ? tag : null))
+            .filter((tag): tag is string => Boolean(tag))
+        : [],
+      variants,
+    });
+  }
 
-      const variantsRaw = Array.isArray(item.variants) ? item.variants : [];
-      const variants = variantsRaw
-        .map((variant) => {
-          if (!variant || typeof variant !== "object") {
-            return null;
-          }
-
-          const record = variant as Record<string, unknown>;
-          const variantId = record.id;
-          const variantName = record.name;
-
-          if (typeof variantId !== "string" || typeof variantName !== "string") {
-            return null;
-          }
-
-          const priceOverrideRaw = record.priceOverride;
-          const parsedPriceOverride =
-            priceOverrideRaw === null || priceOverrideRaw === undefined
-              ? null
-              : Number(priceOverrideRaw);
-
-          return {
-            id: variantId,
-            name: variantName,
-            description:
-              typeof record.description === "string" ? record.description : null,
-            imageUrl: typeof record.imageUrl === "string" ? record.imageUrl : null,
-            priceOverride:
-              parsedPriceOverride !== null && Number.isFinite(parsedPriceOverride)
-                ? parsedPriceOverride
-                : null,
-            position:
-              typeof record.position === "number"
-                ? record.position
-                : Number(record.position ?? 0) || 0,
-          };
-        })
-        .filter((variant): variant is NonNullable<typeof variant> => Boolean(variant));
-
-      const unitPriceRaw = item.unitPrice;
-      const parsedUnitPrice =
-        typeof unitPriceRaw === "number"
-          ? unitPriceRaw
-          : unitPriceRaw !== undefined && unitPriceRaw !== null
-          ? Number(unitPriceRaw)
-          : 0;
-
-      return {
-        id,
-        name,
-        description:
-          typeof item.description === "string" ? item.description : null,
-        code: typeof item.code === "string" ? item.code : undefined,
-        unit: typeof item.unit === "string" ? item.unit : undefined,
-        unitPrice: Number.isFinite(parsedUnitPrice) ? parsedUnitPrice : 0,
-        currency: typeof item.currency === "string" ? item.currency : "EUR",
-        active:
-          typeof item.active === "boolean"
-            ? item.active
-            : item.active === null || item.active === undefined
-            ? true
-            : Boolean(item.active),
-        tags: Array.isArray(item.tags)
-          ? (item.tags as unknown[])
-              .map((tag) => (typeof tag === "string" ? tag : null))
-              .filter((tag): tag is string => Boolean(tag))
-          : [],
-        variants,
-      } satisfies CatalogItem;
-    })
-    .filter((item): item is CatalogItem => Boolean(item));
+  return normalized;
 }
 
 export function CatalogItemSelector({
