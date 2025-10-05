@@ -132,6 +132,7 @@ export function CatalogItemSelector({
   );
   const [items, setItems] = useState<CatalogItem[]>(normalizedInitialItems);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -140,6 +141,7 @@ export function CatalogItemSelector({
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await fetch("/api/items", {
         cache: "no-store",
@@ -154,6 +156,7 @@ export function CatalogItemSelector({
       setItems(normalizeCatalogItems(data.items ?? []));
     } catch (error) {
       console.error("Error fetching items:", error);
+      setLoadError("We couldn't load your catalog right now. Refresh or try again.");
     } finally {
       setLoading(false);
     }
@@ -173,14 +176,19 @@ export function CatalogItemSelector({
     }).format(value);
   };
 
-  const filteredItems = items.filter(
-    (item) =>
-      item.active &&
-      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
-        ))
+  const filteredItems = items.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const sortedItems = useMemo(
+    () =>
+      filteredItems.slice().sort((a, b) => {
+        if (a.active === b.active) return a.name.localeCompare(b.name);
+        return a.active ? -1 : 1;
+      }),
+    [filteredItems]
   );
 
   const handleSelect = (item: CatalogItem) => {
@@ -238,7 +246,7 @@ export function CatalogItemSelector({
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               Loading catalog items...
             </div>
-          ) : filteredItems.length === 0 ? (
+          ) : sortedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Package className="mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="mb-2 text-lg font-semibold">
@@ -247,7 +255,7 @@ export function CatalogItemSelector({
               <p className="max-w-md text-muted-foreground">
                 {searchQuery
                   ? "Try a different search term"
-                  : "Create catalog items first to add them to your quotes."}
+                  : "Create catalog items or mark existing ones as active so they can be added to quotes."}
               </p>
               {!searchQuery && (
                 <Button asChild size="sm" className="mt-4">
@@ -257,20 +265,28 @@ export function CatalogItemSelector({
                   </Link>
                 </Button>
               )}
+              {loadError && (
+                <p className="mt-4 text-sm text-muted-foreground">{loadError}</p>
+              )}
             </div>
           ) : (
             <ScrollArea className="h-[400px] pr-4">
               <div className="grid gap-3">
-                {filteredItems.map((item) => (
-                  <Card
-                    key={item.id}
-                    className={`cursor-pointer transition-all hover:border-primary ${
-                      selectedItemId === item.id ? "border-primary bg-primary/5" : ""
-                    }`}
-                    onClick={() => handleSelect(item)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
+                {sortedItems.map((item) => {
+                  const isSelectable = item.active;
+                  return (
+                    <Card
+                      key={item.id}
+                      data-inactive={!isSelectable}
+                      className={`transition-all ${
+                        isSelectable ? "cursor-pointer hover:border-primary" : "opacity-60"
+                      } ${
+                        selectedItemId === item.id ? "border-primary bg-primary/5" : ""
+                      }`}
+                      onClick={isSelectable ? () => handleSelect(item) : undefined}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
                         {/* Item Variants Preview */}
                         <div className="flex gap-2 shrink-0">
                           {item.variants?.slice(0, 2).map((variant, idx) => (
@@ -301,6 +317,11 @@ export function CatalogItemSelector({
                             <div className="min-w-0">
                               <h4 className="font-semibold flex items-center gap-2">
                                 {item.name}
+                                {!isSelectable && (
+                                  <Badge variant="outline" className="text-xs uppercase">
+                                    inactive
+                                  </Badge>
+                                )}
                                 {selectedItemId === item.id && (
                                   <Check className="h-4 w-4 text-primary" />
                                 )}
@@ -368,9 +389,13 @@ export function CatalogItemSelector({
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                );
+              })}
               </div>
             </ScrollArea>
+          )}
+          {loadError && sortedItems.length > 0 && (
+            <p className="text-sm text-muted-foreground">{loadError}</p>
           )}
         </div>
       </DialogContent>
