@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import type { CatalogItem } from "@/types/catalog";
 
 const variantSchema = z.object({
   name: z.string().min(1, "Variant name is required"),
@@ -53,30 +54,10 @@ const itemFormSchema = z.object({
 
 type ItemFormValues = z.infer<typeof itemFormSchema>;
 
-interface CatalogItemWithVariants {
-  id: string;
-  name: string;
-  description?: string | null;
-  code?: string | null;
-  unit?: string | null;
-  unitPrice: number;
-  currency: string;
-  active: boolean;
-  tags: string[];
-  variants?: {
-    id: string;
-    name: string;
-    description?: string | null;
-    imageUrl?: string | null;
-    priceOverride?: number | null;
-    position: number;
-  }[];
-}
-
 interface ItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  item?: CatalogItemWithVariants;
+  item?: CatalogItem;
 }
 
 export function ItemDialog({ open, onOpenChange, item }: ItemDialogProps) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { authenticateApiRequest } from "@/lib/api-auth";
 import { prisma } from "@/server/prisma";
+import { getCatalogItemsForOrg } from "@/server/catalog";
 import { Prisma } from "@prisma/client";
 
 const VariantSchema = z.object({
@@ -81,21 +82,7 @@ export async function GET() {
   }
 
   try {
-    const items = await prisma.catalogItem.findMany({
-      where: {
-        orgId: authResult.viewer.org.id,
-      },
-      include: {
-        variants: {
-          orderBy: {
-            position: "asc",
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const items = await getCatalogItemsForOrg(authResult.viewer.org.id);
 
     return NextResponse.json({ items });
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, Package, Check, RefreshCw, ExternalLink, Plus } from "lucide-react";
 import {
   Dialog,
@@ -17,33 +17,106 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-
-interface ItemVariant {
-  id: string;
-  name: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  priceOverride?: number | null;
-  position: number;
-}
-
-interface CatalogItem {
-  id: string;
-  name: string;
-  description?: string | null;
-  code?: string | null;
-  unitPrice: number;
-  currency: string;
-  active: boolean;
-  tags: string[];
-  variants?: ItemVariant[];
-}
+import type { CatalogItem } from "@/types/catalog";
 
 interface CatalogItemSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectItem: (item: CatalogItem) => void;
   selectedItemId?: string;
+  initialItems?: CatalogItem[];
+}
+
+function normalizeCatalogItems(items: readonly CatalogItem[] | unknown[]): CatalogItem[] {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") {
+        return null;
+      }
+
+      const item = raw as Record<string, unknown>;
+      const id = item.id;
+      const name = item.name;
+
+      if (typeof id !== "string" || typeof name !== "string") {
+        return null;
+      }
+
+      const variantsRaw = Array.isArray(item.variants) ? item.variants : [];
+      const variants = variantsRaw
+        .map((variant) => {
+          if (!variant || typeof variant !== "object") {
+            return null;
+          }
+
+          const record = variant as Record<string, unknown>;
+          const variantId = record.id;
+          const variantName = record.name;
+
+          if (typeof variantId !== "string" || typeof variantName !== "string") {
+            return null;
+          }
+
+          const priceOverrideRaw = record.priceOverride;
+          const parsedPriceOverride =
+            priceOverrideRaw === null || priceOverrideRaw === undefined
+              ? null
+              : Number(priceOverrideRaw);
+
+          return {
+            id: variantId,
+            name: variantName,
+            description:
+              typeof record.description === "string" ? record.description : null,
+            imageUrl: typeof record.imageUrl === "string" ? record.imageUrl : null,
+            priceOverride:
+              parsedPriceOverride !== null && Number.isFinite(parsedPriceOverride)
+                ? parsedPriceOverride
+                : null,
+            position:
+              typeof record.position === "number"
+                ? record.position
+                : Number(record.position ?? 0) || 0,
+          };
+        })
+        .filter((variant): variant is NonNullable<typeof variant> => Boolean(variant));
+
+      const unitPriceRaw = item.unitPrice;
+      const parsedUnitPrice =
+        typeof unitPriceRaw === "number"
+          ? unitPriceRaw
+          : unitPriceRaw !== undefined && unitPriceRaw !== null
+          ? Number(unitPriceRaw)
+          : 0;
+
+      return {
+        id,
+        name,
+        description:
+          typeof item.description === "string" ? item.description : null,
+        code: typeof item.code === "string" ? item.code : undefined,
+        unit: typeof item.unit === "string" ? item.unit : undefined,
+        unitPrice: Number.isFinite(parsedUnitPrice) ? parsedUnitPrice : 0,
+        currency: typeof item.currency === "string" ? item.currency : "EUR",
+        active:
+          typeof item.active === "boolean"
+            ? item.active
+            : item.active === null || item.active === undefined
+            ? true
+            : Boolean(item.active),
+        tags: Array.isArray(item.tags)
+          ? (item.tags as unknown[])
+              .map((tag) => (typeof tag === "string" ? tag : null))
+              .filter((tag): tag is string => Boolean(tag))
+          : [],
+        variants,
+      } satisfies CatalogItem;
+    })
+    .filter((item): item is CatalogItem => Boolean(item));
 }
 
 export function CatalogItemSelector({
@@ -51,35 +124,46 @@ export function CatalogItemSelector({
   onOpenChange,
   onSelectItem,
   selectedItemId,
+  initialItems,
 }: CatalogItemSelectorProps) {
-  const [items, setItems] = useState<CatalogItem[]>([]);
+  const normalizedInitialItems = useMemo(
+    () => normalizeCatalogItems(initialItems ?? []),
+    [initialItems]
+  );
+  const [items, setItems] = useState<CatalogItem[]>(normalizedInitialItems);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (open) {
-      fetchItems();
-    }
-  }, [open]);
+    setItems(normalizedInitialItems);
+  }, [normalizedInitialItems]);
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/items", {
         cache: "no-store",
+        credentials: "include",
         headers: {
           "Cache-Control": "no-cache",
+          Accept: "application/json",
         },
       });
       if (!response.ok) throw new Error("Failed to fetch items");
       const data = await response.json();
-      setItems(data.items || []);
+      setItems(normalizeCatalogItems(data.items ?? []));
     } catch (error) {
       console.error("Error fetching items:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      void fetchItems();
+    }
+  }, [open, fetchItems]);
 
   const formatCurrency = (value: number, currency = "EUR") => {
     return new Intl.NumberFormat("en-US", {
@@ -150,7 +234,7 @@ export function CatalogItemSelector({
             </div>
           </div>
 
-          {loading ? (
+          {loading && items.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               Loading catalog items...
             </div>

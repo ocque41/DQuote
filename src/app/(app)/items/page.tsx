@@ -6,27 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { ItemsPageClient } from "./items-page-client";
 
 import { getViewerContext } from "@/server/auth";
-import { prisma } from "@/server/prisma";
-
-type SerializedCatalogItem = {
-  id: string;
-  name: string;
-  description: string | null;
-  code: string | null;
-  unit: string | null;
-  unitPrice: number;
-  currency: string;
-  active: boolean;
-  tags: string[];
-  variants?: {
-    id: string;
-    name: string;
-    description: string | null;
-    imageUrl: string | null;
-    priceOverride: number | null;
-    position: number;
-  }[];
-};
+import { getCatalogItemsForOrg } from "@/server/catalog";
+import type { CatalogItem } from "@/types/catalog";
 
 export const metadata: Metadata = {
   title: "Items | DQuote",
@@ -45,35 +26,11 @@ export default async function ItemsPage() {
     redirect("/login?redirect=/items");
   }
 
-  let catalogItems: SerializedCatalogItem[] = [];
+  let catalogItems: CatalogItem[] = [];
   let databaseError = false;
 
   try {
-    const items = await prisma.catalogItem.findMany({
-      where: {
-        orgId: viewer.org.id,
-      },
-      include: {
-        variants: {
-          orderBy: {
-            position: "asc",
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    // Serialize Prisma Decimal types to numbers for client component
-    catalogItems = items.map((item) => ({
-      ...item,
-      unitPrice: Number(item.unitPrice),
-      variants: item.variants?.map((v) => ({
-        ...v,
-        priceOverride: v.priceOverride ? Number(v.priceOverride) : null,
-      })),
-    }));
+    catalogItems = await getCatalogItemsForOrg(viewer.org.id);
   } catch (error) {
     console.error("Items page database error:", error);
     databaseError = true;

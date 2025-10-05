@@ -25,24 +25,7 @@ import {
 } from "@/components/ui/tabs";
 import { QuoteFlowMap } from "@/components/quote-flow-map";
 import { CatalogItemSelector } from "@/components/catalog-item-selector";
-
-interface ItemVariant {
-  id: string;
-  name: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  priceOverride?: number | null;
-  position: number;
-}
-
-interface CatalogItem {
-  id: string;
-  name: string;
-  description?: string | null;
-  unitPrice: number;
-  currency: string;
-  variants?: ItemVariant[];
-}
+import type { CatalogItem } from "@/types/catalog";
 
 interface SlideOption {
   id: string;
@@ -108,7 +91,11 @@ function createSlide(type: QuoteSlideType, position: number): QuoteSlide {
   };
 }
 
-export function NewQuoteBuilder() {
+interface NewQuoteBuilderProps {
+  initialCatalogItems: CatalogItem[];
+}
+
+export function NewQuoteBuilder({ initialCatalogItems }: NewQuoteBuilderProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<QuoteFormData>({
     title: "",
@@ -917,6 +904,7 @@ export function NewQuoteBuilder() {
             ? formData.slides.find(s => s.id === selectingForSlideId)?.catalogItemId
             : undefined
         }
+        initialItems={initialCatalogItems}
       />
     </div>
   );

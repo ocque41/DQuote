@@ -33,38 +33,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Edit, MoreVertical, Package, Plus, Search, Trash2, Image } from "lucide-react";
 import { ItemDialog } from "@/components/item-dialog";
-
-interface CatalogItemWithVariants {
-  id: string;
-  name: string;
-  description?: string | null;
-  code?: string | null;
-  unit?: string | null;
-  unitPrice: number;
-  currency: string;
-  active: boolean;
-  tags: string[];
-  variants?: {
-    id: string;
-    name: string;
-    description?: string | null;
-    imageUrl?: string | null;
-    priceOverride?: number | null;
-    position: number;
-  }[];
-}
+import type { CatalogItem } from "@/types/catalog";
 
 interface ItemsPageClientProps {
-  items: CatalogItemWithVariants[];
+  items: CatalogItem[];
 }
 
 export function ItemsPageClient({ items }: ItemsPageClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<CatalogItemWithVariants | null>(null);
+  const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<CatalogItemWithVariants | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<CatalogItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const formatCurrency = (value: number, currency = "EUR") => {
@@ -86,12 +67,12 @@ export function ItemsPageClient({ items }: ItemsPageClientProps) {
     setDialogOpen(true);
   };
 
-  const handleEditItem = (item: CatalogItemWithVariants) => {
+  const handleEditItem = (item: CatalogItem) => {
     setSelectedItem(item);
     setDialogOpen(true);
   };
 
-  const handleDeleteClick = (item: CatalogItemWithVariants) => {
+  const handleDeleteClick = (item: CatalogItem) => {
     setItemToDelete(item);
     setDeleteDialogOpen(true);
   };
