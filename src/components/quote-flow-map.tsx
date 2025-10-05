@@ -13,29 +13,28 @@ interface SlideOption {
   nextSlideId?: string;
 }
 
+type QuoteSlideType = "intro" | "addon" | "review";
+
 interface QuoteSlide {
   id: string;
   title: string;
-  type: "intro" | "choice" | "addon" | "review";
+  type: QuoteSlideType;
   position: number;
-  optionA?: SlideOption;
-  optionB?: SlideOption;
+  options: SlideOption[];
 }
 
 interface QuoteFlowMapProps {
   slides: QuoteSlide[];
 }
 
-const typeToLabel: Record<QuoteSlide["type"], { name: string; description: string }> = {
+const typeToLabel: Record<QuoteSlideType, { name: string; description: string }> = {
   intro: { name: "Intro", description: "Kickoff messaging" },
-  choice: { name: "Choice", description: "A/B decision" },
   addon: { name: "Add-on", description: "Optional extras" },
   review: { name: "Review", description: "Summary & CTA" },
 };
 
-const typeToTone: Record<QuoteSlide["type"], string> = {
+const typeToTone: Record<QuoteSlideType, string> = {
   intro: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-900",
-  choice: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-900",
   addon: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-900",
   review: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-900",
 };
@@ -59,10 +58,9 @@ export function QuoteFlowMap({ slides }: QuoteFlowMapProps) {
 
   const summary = {
     intro: slides.filter((slide) => slide.type === "intro").length,
-    choice: slides.filter((slide) => slide.type === "choice").length,
     addon: slides.filter((slide) => slide.type === "addon").length,
     review: slides.filter((slide) => slide.type === "review").length,
-  };
+  } satisfies Record<QuoteSlideType, number>;
 
   return (
     <div className="space-y-6">
@@ -88,7 +86,7 @@ export function QuoteFlowMap({ slides }: QuoteFlowMapProps) {
       <ol className="relative space-y-6 border-l border-dashed border-border pl-6">
         {slides.map((slide, index) => {
           const defaultNext = slides[index + 1];
-          const optionConnections = [slide.optionA, slide.optionB].filter(Boolean) as SlideOption[];
+          const optionConnections = slide.options;
 
           return (
             <li key={slide.id} className="relative">

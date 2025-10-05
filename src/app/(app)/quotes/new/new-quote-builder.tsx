@@ -54,17 +54,17 @@ interface SlideOption {
   catalogItemId?: string; // Link to catalog item
 }
 
+type QuoteSlideType = "intro" | "addon" | "review";
+
 interface QuoteSlide {
   id: string;
   title: string;
   subtitle?: string;
-  type: "intro" | "choice" | "addon" | "review";
+  type: QuoteSlideType;
   position: number;
   catalogItemId?: string; // Link to catalog item
   catalogItemName?: string; // Display name
-  optionA?: SlideOption;
-  optionB?: SlideOption;
-  allowMultiple?: boolean; // For addon slides
+  options: SlideOption[];
 }
 
 interface QuoteFormData {
@@ -83,6 +83,27 @@ function generateId() {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createOption(overrides: Partial<SlideOption> = {}): SlideOption {
+  return {
+    id: generateId(),
+    name: "",
+    description: "",
+    price: 0,
+    ...overrides,
+  };
+}
+
+function createSlide(type: QuoteSlideType, position: number): QuoteSlide {
+  return {
+    id: generateId(),
+    title: "",
+    subtitle: "",
+    type,
+    position,
+    options: type === "addon" ? [createOption()] : [],
+  };
 }
 
 export function NewQuoteBuilder() {
@@ -115,27 +136,8 @@ export function NewQuoteBuilder() {
     }
   }, [formData.slides.length, currentSlideIndex]);
 
-  const addSlide = (type: QuoteSlide["type"]) => {
-    const newSlide: QuoteSlide = {
-      id: generateId(),
-      title: "",
-      subtitle: "",
-      type,
-      position: formData.slides.length,
-      optionA: type === "choice" || type === "addon" ? {
-        id: generateId(),
-        name: "",
-        description: "",
-        price: 0,
-      } : undefined,
-      optionB: type === "choice" ? {
-        id: generateId(),
-        name: "",
-        description: "",
-        price: 0,
-      } : undefined,
-      allowMultiple: type === "addon",
-    };
+  const addSlide = (type: QuoteSlideType) => {
+    const newSlide = createSlide(type, formData.slides.length);
     setFormData(prev => ({
       ...prev,
       slides: [...prev.slides, newSlide],
@@ -161,17 +163,44 @@ export function NewQuoteBuilder() {
     setEditingSlideId(null);
   };
 
-  const updateOption = (slideId: string, optionKey: "optionA" | "optionB", updates: Partial<SlideOption>) => {
+  const updateOption = (slideId: string, optionId: string, updates: Partial<SlideOption>) => {
     setFormData(prev => ({
       ...prev,
-      slides: prev.slides.map(slide => {
-        if (slide.id === slideId && slide[optionKey]) {
-          return {
-            ...slide,
-            [optionKey]: { ...slide[optionKey]!, ...updates },
-          };
-        }
-        return slide;
+      slides: prev.slides.map((slide) => {
+        if (slide.id !== slideId) return slide;
+        return {
+          ...slide,
+          options: slide.options.map((option) =>
+            option.id === optionId ? { ...option, ...updates } : option
+          ),
+        };
+      }),
+    }));
+  };
+
+  const addOption = (slideId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      slides: prev.slides.map((slide) => {
+        if (slide.id !== slideId) return slide;
+        return {
+          ...slide,
+          options: [...slide.options, createOption()],
+        };
+      }),
+    }));
+  };
+
+  const removeOption = (slideId: string, optionId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      slides: prev.slides.map((slide) => {
+        if (slide.id !== slideId) return slide;
+        const remaining = slide.options.filter((option) => option.id !== optionId);
+        return {
+          ...slide,
+          options: remaining.length > 0 ? remaining : [createOption()],
+        };
       }),
     }));
   };
@@ -205,63 +234,35 @@ export function NewQuoteBuilder() {
     const slide = formData.slides.find(s => s.id === selectingForSlideId);
     if (!slide) return;
 
-    // Auto-populate options from catalog item variants
-    const variants = item.variants || [];
-    const variantA = variants[0];
-    const variantB = variants[1];
     const basePrice = Number(item.unitPrice);
     const baseDescription = item.description || "";
+    const variants = item.variants ?? [];
 
-    const updates: Partial<QuoteSlide> = {
+    const populatedOptions = variants.length
+      ? variants.map((variant) =>
+          createOption({
+            name: variant.name,
+            description: variant.description || baseDescription,
+            price: variant.priceOverride ? Number(variant.priceOverride) : basePrice,
+            imageUrl: variant.imageUrl || undefined,
+            catalogItemId: item.id,
+          })
+        )
+      : [
+          createOption({
+            name: item.name,
+            description: baseDescription,
+            price: basePrice,
+            catalogItemId: item.id,
+          }),
+        ];
+
+    updateSlide(selectingForSlideId, {
       catalogItemId: item.id,
       catalogItemName: item.name,
       title: slide.title || item.name,
-    };
-
-    if (slide.type === "choice" || slide.type === "addon") {
-      const optionA = variantA
-        ? {
-            id: generateId(),
-            name: variantA.name,
-            description: variantA.description || baseDescription,
-            price: variantA.priceOverride ? Number(variantA.priceOverride) : basePrice,
-            imageUrl: variantA.imageUrl || undefined,
-            catalogItemId: item.id,
-          }
-        : {
-            id: slide.optionA?.id ?? generateId(),
-            name: slide.optionA?.name || item.name,
-            description: slide.optionA?.description || baseDescription,
-            price: slide.optionA?.price ?? basePrice,
-            catalogItemId: item.id,
-          };
-
-      updates.optionA = optionA;
-
-      if (slide.type === "choice") {
-        if (variantB) {
-          updates.optionB = {
-            id: generateId(),
-            name: variantB.name,
-            description: variantB.description || baseDescription,
-            price: variantB.priceOverride ? Number(variantB.priceOverride) : basePrice,
-            imageUrl: variantB.imageUrl || undefined,
-            catalogItemId: item.id,
-          };
-        } else if (slide.optionB) {
-          updates.optionB = {
-            ...slide.optionB,
-            catalogItemId: item.id,
-            description: slide.optionB.description || baseDescription,
-            price: Number.isFinite(slide.optionB.price) ? slide.optionB.price : basePrice,
-          };
-        } else {
-          updates.optionB = undefined;
-        }
-      }
-    }
-
-    updateSlide(selectingForSlideId, updates);
+      options: slide.type === "addon" ? populatedOptions : slide.options,
+    });
     setSelectingForSlideId(null);
   };
 
@@ -364,48 +365,6 @@ export function NewQuoteBuilder() {
           </Card>
         );
 
-      case "choice":
-        return (
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-6 sm:mb-8 px-4">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">{slide.title || "Choose Your Option"}</h2>
-              {slide.subtitle && (
-                <p className="text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
-              )}
-            </div>
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              {slide.optionA && (
-                <Card className="cursor-pointer hover:border-primary transition-all hover:shadow-lg">
-                  <CardHeader className="px-4 sm:px-6">
-                    <CardTitle className="text-xl sm:text-2xl">{slide.optionA.name || "Option A"}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-sm sm:text-base text-muted-foreground">{slide.optionA.description}</p>
-                    <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(slide.optionA.price)}</div>
-                    <Button className="w-full" size="lg" onClick={goToNextSlide}>
-                      Select This Option
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              {slide.optionB && (
-                <Card className="cursor-pointer hover:border-primary transition-all hover:shadow-lg">
-                  <CardHeader className="px-4 sm:px-6">
-                    <CardTitle className="text-xl sm:text-2xl">{slide.optionB.name || "Option B"}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <p className="text-sm sm:text-base text-muted-foreground">{slide.optionB.description}</p>
-                    <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(slide.optionB.price)}</div>
-                    <Button className="w-full" size="lg" onClick={goToNextSlide}>
-                      Select This Option
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        );
-
       case "addon":
         return (
           <div className="max-w-3xl mx-auto px-4">
@@ -415,25 +374,35 @@ export function NewQuoteBuilder() {
                 <p className="text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
               )}
             </div>
-            {slide.optionA && (
-              <Card className="mb-4 sm:mb-6">
-                <CardHeader className="px-4 sm:px-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <CardTitle className="text-lg sm:text-xl">{slide.optionA.name || "Add-on Option"}</CardTitle>
-                    <div className="text-xl sm:text-2xl font-bold">{formatCurrency(slide.optionA.price)}</div>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6">
-                  <p className="text-sm sm:text-base text-muted-foreground mb-4">{slide.optionA.description}</p>
-                  <Button variant="outline" className="w-full">
-                    Add to Selection
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-            <Button className="w-full" size="lg" onClick={goToNextSlide}>
-              Continue <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <div className="space-y-4 sm:space-y-6">
+              {slide.options.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                    No add-ons configured yet. Use the builder to add options from your catalog.
+                  </CardContent>
+                </Card>
+              ) : (
+                slide.options.map((option) => (
+                  <Card key={option.id} className="mb-2">
+                    <CardHeader className="px-4 sm:px-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <CardTitle className="text-lg sm:text-xl">{option.name || "Add-on Option"}</CardTitle>
+                        <div className="text-xl sm:text-2xl font-bold">{formatCurrency(option.price)}</div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="px-4 sm:px-6">
+                      <p className="text-sm sm:text-base text-muted-foreground mb-4">{option.description}</p>
+                      <Button variant="outline" className="w-full">
+                        Add to Selection
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+              <Button className="w-full" size="lg" onClick={goToNextSlide}>
+                Continue <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         );
 
@@ -561,9 +530,6 @@ export function NewQuoteBuilder() {
                       <Button onClick={() => addSlide("intro")} size="sm" variant="outline" className="flex-1 sm:flex-none">
                         Intro
                       </Button>
-                      <Button onClick={() => addSlide("choice")} size="sm" variant="outline" className="flex-1 sm:flex-none">
-                        Choice
-                      </Button>
                       <Button onClick={() => addSlide("addon")} size="sm" variant="outline" className="flex-1 sm:flex-none">
                         Add-on
                       </Button>
@@ -664,8 +630,8 @@ export function NewQuoteBuilder() {
                                 />
                               </div>
 
-                              {/* Catalog Item Selector for Choice & Addon slides */}
-                              {(slide.type === "choice" || slide.type === "addon") && (
+                              {/* Catalog Item Selector for Add-on slides */}
+                              {slide.type === "addon" && (
                                 <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
                                   <div className="flex items-center justify-between">
                                     <Label className="text-sm font-medium">Product / Service</Label>
@@ -687,141 +653,114 @@ export function NewQuoteBuilder() {
                                   </Button>
                                   {slide.catalogItemId && (
                                     <p className="text-xs text-muted-foreground">
-                                      Options below are auto-populated from catalog item variants. You can still edit them manually.
+                                      Options below are auto-populated from catalog item variants. Edit or add more to tailor the bundle.
                                     </p>
                                   )}
                                 </div>
                               )}
 
-                              {/* Option A */}
-                              {slide.optionA && (
-                                <div className="border rounded-lg p-4 space-y-3">
-                                  <h4 className="font-semibold">Option A</h4>
-                                  <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                      <Label>Name</Label>
-                                      <Input
-                                        placeholder="Option name"
-                                        value={slide.optionA.name}
-                                        onChange={(e) =>
-                                          updateOption(slide.id, "optionA", { name: e.target.value })
-                                        }
-                                      />
+                              {slide.type === "addon" && (
+                                <div className="space-y-4">
+                                  {slide.options.map((option, optionIndex) => (
+                                    <div key={option.id} className="border rounded-lg p-4 space-y-3">
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                          <h4 className="font-semibold">Add-on Option {optionIndex + 1}</h4>
+                                          {option.catalogItemId && (
+                                            <p className="text-xs text-muted-foreground">
+                                              Linked to catalog item • edits stay local to this quote
+                                            </p>
+                                          )}
+                                        </div>
+                                        {slide.options.length > 1 && (
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => removeOption(slide.id, option.id)}
+                                            className="text-muted-foreground hover:text-destructive"
+                                          >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Remove
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                          <Label>Name</Label>
+                                          <Input
+                                            placeholder="Option name"
+                                            value={option.name}
+                                            onChange={(e) =>
+                                              updateOption(slide.id, option.id, { name: e.target.value })
+                                            }
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Price</Label>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={option.price}
+                                            onChange={(e) =>
+                                              updateOption(slide.id, option.id, {
+                                                price: Number.isNaN(parseFloat(e.target.value))
+                                                  ? 0
+                                                  : parseFloat(e.target.value),
+                                              })
+                                            }
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label>Description</Label>
+                                        <Textarea
+                                          placeholder="Describe this option"
+                                          value={option.description}
+                                          onChange={(e) =>
+                                            updateOption(slide.id, option.id, { description: e.target.value })
+                                          }
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label>Next Slide (conditional)</Label>
+                                        <Select
+                                          value={option.nextSlideId || ""}
+                                          onValueChange={(value) =>
+                                            updateOption(slide.id, option.id, {
+                                              nextSlideId: value || undefined,
+                                            })
+                                          }
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Continue in order" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="">Next slide in order</SelectItem>
+                                            {formData.slides
+                                              .filter(s => s.id !== slide.id)
+                                              .map(s => (
+                                                <SelectItem key={s.id} value={s.id}>
+                                                  Slide {s.position + 1}: {s.title || s.type}
+                                                </SelectItem>
+                                              ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </div>
-                                    <div className="space-y-2">
-                                      <Label>Price</Label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={slide.optionA.price}
-                                        onChange={(e) =>
-                                          updateOption(slide.id, "optionA", { price: parseFloat(e.target.value) || 0 })
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Textarea
-                                      placeholder="Describe this option"
-                                      value={slide.optionA.description}
-                                      onChange={(e) =>
-                                        updateOption(slide.id, "optionA", { description: e.target.value })
-                                      }
-                                    />
-                                  </div>
-                                  {slide.type === "choice" && (
-                                    <div className="space-y-2">
-                                      <Label>Next Slide (Conditional Path)</Label>
-                                      <Select
-                                        value={slide.optionA.nextSlideId || ""}
-                                        onValueChange={(value) =>
-                                          updateOption(slide.id, "optionA", { nextSlideId: value || undefined })
-                                        }
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Continue to next slide" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="">Next slide in order</SelectItem>
-                                          {formData.slides
-                                            .filter(s => s.id !== slide.id)
-                                            .map(s => (
-                                              <SelectItem key={s.id} value={s.id}>
-                                                Slide {s.position + 1}: {s.title || s.type}
-                                              </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Option B */}
-                              {slide.optionB && (
-                                <div className="border rounded-lg p-4 space-y-3">
-                                  <h4 className="font-semibold">Option B</h4>
-                                  <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                      <Label>Name</Label>
-                                      <Input
-                                        placeholder="Option name"
-                                        value={slide.optionB.name}
-                                        onChange={(e) =>
-                                          updateOption(slide.id, "optionB", { name: e.target.value })
-                                        }
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label>Price</Label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={slide.optionB.price}
-                                        onChange={(e) =>
-                                          updateOption(slide.id, "optionB", { price: parseFloat(e.target.value) || 0 })
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Textarea
-                                      placeholder="Describe this option"
-                                      value={slide.optionB.description}
-                                      onChange={(e) =>
-                                        updateOption(slide.id, "optionB", { description: e.target.value })
-                                      }
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Next Slide (Conditional Path)</Label>
-                                    <Select
-                                      value={slide.optionB.nextSlideId || ""}
-                                      onValueChange={(value) =>
-                                        updateOption(slide.id, "optionB", { nextSlideId: value || undefined })
-                                      }
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Continue to next slide" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="">Next slide in order</SelectItem>
-                                        {formData.slides
-                                          .filter(s => s.id !== slide.id)
-                                          .map(s => (
-                                            <SelectItem key={s.id} value={s.id}>
-                                              Slide {s.position + 1}: {s.title || s.type}
-                                            </SelectItem>
-                                          ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
+                                  ))}
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2"
+                                    onClick={() => addOption(slide.id)}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                    Add another add-on
+                                  </Button>
                                 </div>
                               )}
                             </CardContent>
@@ -847,7 +786,7 @@ export function NewQuoteBuilder() {
                         <span className="text-muted-foreground">Total Slides:</span>
                         <span className="font-medium">{formData.slides.length}</span>
                       </div>
-                      {(["intro", "choice", "addon", "review"] as QuoteSlide["type"][]).map(type => (
+                      {(["intro", "addon", "review"] as QuoteSlideType[]).map(type => (
                         <div key={type} className="flex justify-between text-xs">
                           <span className="text-muted-foreground capitalize">{type}</span>
                           <span className="font-medium text-foreground">
@@ -885,9 +824,9 @@ export function NewQuoteBuilder() {
                     <CardTitle className="text-sm">Quick Tips</CardTitle>
                   </CardHeader>
                   <CardContent className="text-xs text-muted-foreground space-y-2">
-                    <p>• Use <strong>Choice slides</strong> for either/or decisions</p>
-                    <p>• Use <strong>Add-on slides</strong> for optional extras</p>
-                    <p>• Set conditional paths to create dynamic flows</p>
+                    <p>• Use <strong>Add-on slides</strong> to bundle optional upgrades</p>
+                    <p>• Link catalog items to pull pricing and descriptions instantly</p>
+                    <p>• Set conditional paths on add-ons to jump to targeted follow-ups</p>
                     <p>• Preview to see the client experience</p>
                   </CardContent>
                 </Card>

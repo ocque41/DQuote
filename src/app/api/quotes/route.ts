@@ -18,12 +18,11 @@ const SlideOptionSchema = z.object({
 const SlideSchema = z.object({
   title: z.string(),
   subtitle: z.string().optional(),
-  type: z.enum(["intro", "choice", "addon", "review"]),
+  type: z.enum(["intro", "addon", "review"]),
   position: z.number(),
   catalogItemId: z.string().uuid().optional(),
   catalogItemName: z.string().optional(),
-  optionA: SlideOptionSchema.optional(),
-  optionB: SlideOptionSchema.optional(),
+  options: z.array(SlideOptionSchema).default([]),
 });
 
 const CreateQuoteSchema = z.object({
@@ -86,8 +85,6 @@ export async function POST(req: Request) {
       switch (type) {
         case "intro":
           return "INTRO";
-        case "choice":
-          return "CHOICE_CORE";
         case "addon":
           return "ADDONS";
         case "review":
@@ -122,49 +119,28 @@ export async function POST(req: Request) {
             };
 
             // Add options if they exist
-            const options: Prisma.OptionCreateWithoutSlideInput[] = [];
-
-            if (slide.optionA) {
-              const optionAData: Prisma.OptionCreateWithoutSlideInput = {
-                kind: "ITEM",
-                name: slide.optionA.name,
-                description: slide.optionA.description,
-                priceOverride: new Prisma.Decimal(slide.optionA.price),
-                currency: quoteData.currency,
-                isDefault: false,
-                isAddOn: slide.type === "addon",
-                nextSlideId: slide.optionA.nextSlideId,
-              };
-
-              if (slide.optionA.catalogItemId) {
-                optionAData.catalogItem = {
-                  connect: { id: slide.optionA.catalogItemId },
+            const options: Prisma.OptionCreateWithoutSlideInput[] = (slide.options || []).map(
+              (option) => {
+                const optionData: Prisma.OptionCreateWithoutSlideInput = {
+                  kind: "ITEM",
+                  name: option.name,
+                  description: option.description,
+                  priceOverride: new Prisma.Decimal(option.price),
+                  currency: quoteData.currency,
+                  isDefault: false,
+                  isAddOn: slide.type === "addon",
+                  nextSlideId: option.nextSlideId,
                 };
-              }
 
-              options.push(optionAData);
-            }
+                if (option.catalogItemId) {
+                  optionData.catalogItem = {
+                    connect: { id: option.catalogItemId },
+                  };
+                }
 
-            if (slide.optionB && slide.type === "choice") {
-              const optionBData: Prisma.OptionCreateWithoutSlideInput = {
-                kind: "ITEM",
-                name: slide.optionB.name,
-                description: slide.optionB.description,
-                priceOverride: new Prisma.Decimal(slide.optionB.price),
-                currency: quoteData.currency,
-                isDefault: false,
-                isAddOn: false,
-                nextSlideId: slide.optionB.nextSlideId,
-              };
-
-              if (slide.optionB.catalogItemId) {
-                optionBData.catalogItem = {
-                  connect: { id: slide.optionB.catalogItemId },
-                };
-              }
-
-              options.push(optionBData);
-            }
+                return optionData;
+              },
+            );
 
             if (options.length > 0) {
               slideData.options = { create: options };
