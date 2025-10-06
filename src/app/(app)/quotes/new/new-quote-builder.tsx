@@ -272,13 +272,36 @@ export function NewQuoteBuilder({ initialCatalogItems }: NewQuoteBuilderProps) {
       return;
     }
 
+    const sanitizedSlides = formData.slides.map((slide, index) => ({
+      ...slide,
+      title: (slide.title || `Slide ${index + 1}`).trim(),
+      subtitle: slide.subtitle?.trim() ? slide.subtitle.trim() : undefined,
+      position: index,
+      options: slide.options.map((option, optionIndex) => ({
+        ...option,
+        name: option.name?.trim() || `Option ${optionIndex + 1}`,
+        description: option.description?.trim() ?? "",
+        price: Number.isFinite(option.price) ? option.price : 0,
+        nextSlideId: option.nextSlideId || undefined,
+      })),
+    }));
+
+    const payload = {
+      ...formData,
+      description: formData.description.trim() || undefined,
+      clientEmail: formData.clientEmail.trim() || undefined,
+      clientCompany: formData.clientCompany.trim() || undefined,
+      expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : undefined,
+      slides: sanitizedSlides,
+    };
+
     setIsSaving(true);
 
     try {
       const response = await fetch("/api/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
