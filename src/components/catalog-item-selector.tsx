@@ -279,12 +279,12 @@ export function CatalogItemSelector({
                     <Card
                       key={item.id}
                       data-inactive={!isSelectable}
-                      className={`transition-all ${
-                        isSelectable ? "cursor-pointer hover:border-primary" : "opacity-60"
+                      className={`transition-all cursor-pointer ${
+                        isSelectable ? "hover:border-primary" : "opacity-60"
                       } ${
                         selectedItemId === item.id ? "border-primary bg-primary/5" : ""
                       }`}
-                      onClick={isSelectable ? () => handleSelect(item) : undefined}
+                      onClick={() => handleSelect(item)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
